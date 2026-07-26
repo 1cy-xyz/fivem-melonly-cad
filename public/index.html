@@ -64,18 +64,18 @@
         <h2 class="text-2xl font-bold">ER:LC Civilian Portal</h2>
         <div class="space-x-2">
           <button onclick="toggleModal('createCallModal', true)" class="bg-rose-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-rose-500">🚨 Call 911</button>
-          <button onclick="alert('Persona Creation Form')" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-500">+ New Persona</button>
+          <button onclick="toggleModal('createCivModal', true)" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-500">+ New Persona</button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="civilianList">
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-slate-400 text-center py-8">
-          No Civilian Personas Registered Yet
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="civilianList">
+        <div id="noCivsPlaceholder" class="col-span-full bg-slate-800 p-8 rounded-xl border border-slate-700 text-slate-400 text-center">
+          No Civilian Personas Registered Yet. Click "+ New Persona" to create one.
         </div>
       </div>
     </div>
 
-    <!-- 3. LEO / MDT PORTAL TAB (WITH BLURRED OVERLAY) -->
+    <!-- 3. LEO / MDT PORTAL TAB -->
     <div id="mdtTab" class="tab-content hidden relative h-full">
       
       <!-- Blurred Overlay if Off-Duty -->
@@ -89,11 +89,11 @@
         </button>
       </div>
 
-      <!-- Active MDT Interface (Blurred behind overlay when off-duty) -->
+      <!-- Active MDT Interface -->
       <div class="space-y-6">
         <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
           <div class="flex space-x-3 flex-1 mr-4">
-            <input id="mdtSearchInput" type="text" placeholder="Search Person Name, Plate, or Firearm..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+            <input id="mdtSearchInput" type="text" placeholder="Search Person Name..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
             <button onclick="searchMDT()" class="bg-blue-600 px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-500">Search</button>
           </div>
           <button onclick="goOffDuty()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-lg">Go Off-Duty</button>
@@ -103,7 +103,7 @@
           <div class="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700">
             <h3 class="font-bold text-slate-300 mb-4">Record Search Results</h3>
             <div id="mdtSearchResults" class="text-sm text-slate-400">
-              No active queries. Enter a search query above.
+              No active queries. Enter a name above.
             </div>
           </div>
 
@@ -139,13 +139,7 @@
         <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
           <h3 class="font-bold text-slate-300 mb-4">Active 911 Emergency Calls</h3>
           <div id="activeCallsContainer" class="space-y-3">
-            <div class="p-3 bg-slate-900 rounded-lg border border-slate-700">
-              <div class="flex justify-between font-bold text-rose-400 text-sm">
-                <span>[CALL #101] Armed Bank Robbery</span>
-                <span>OPEN</span>
-              </div>
-              <p class="text-xs text-slate-400 mt-1">Location: River City Bank</p>
-            </div>
+            <div class="text-xs text-slate-500 italic">No active 911 calls.</div>
           </div>
         </div>
 
@@ -188,6 +182,65 @@ SAFR Ambulance</textarea>
 
   </main>
 
+  <!-- MODAL: CREATE CIVILIAN PERSONA -->
+  <div id="createCivModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full space-y-4">
+      <h3 class="text-xl font-bold text-blue-400">Create Civilian Persona</h3>
+      
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+        <input id="civFullName" type="text" placeholder="e.g. John Doe" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Date of Birth</label>
+          <input id="civDob" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Gender</label>
+          <select id="civGender" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1">Occupation</label>
+        <input id="civOccupation" type="text" placeholder="e.g. Truck Driver, Unemployed" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Driver's License</label>
+          <select id="civDriverLicense" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            <option value="Valid">Valid</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Revoked">Revoked</option>
+            <option value="None">None</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Firearm License</label>
+          <select id="civFirearmLicense" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            <option value="None">None</option>
+            <option value="CCW Concealed">CCW Concealed</option>
+            <option value="Open Carry">Open Carry</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex space-x-3 pt-2">
+        <button onclick="toggleModal('createCivModal', false)" class="flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-semibold">Cancel</button>
+        <button onclick="submitCivPersona()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-semibold">Create Character</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: GO ON-DUTY -->
   <div id="onDutyModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full space-y-4">
@@ -200,16 +253,12 @@ SAFR Ambulance</textarea>
 
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-1">Select Callsign</label>
-        <select id="onDutyCallsignSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
-          <!-- Dynamically filled -->
-        </select>
+        <select id="onDutyCallsignSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></select>
       </div>
 
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-1">Select ER:LC In-Game Vehicle</label>
-        <select id="onDutyVehicleSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
-          <!-- Dynamically filled -->
-        </select>
+        <select id="onDutyVehicleSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm"></select>
       </div>
 
       <div class="flex space-x-3 pt-2">
@@ -250,6 +299,7 @@ SAFR Ambulance</textarea>
     const socket = io();
     let currentCadId = null;
     let isOnDuty = false;
+    let registered Civs = [];
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -264,6 +314,85 @@ SAFR Ambulance</textarea>
       } else {
         modal.classList.add('hidden');
       }
+    }
+
+    function submitCivPersona() {
+      const name = document.getElementById('civFullName').value;
+      const dob = document.getElementById('civDob').value;
+      const gender = document.getElementById('civGender').value;
+      const job = document.getElementById('civOccupation').value || 'Unemployed';
+      const driverLic = document.getElementById('civDriverLicense').value;
+      const gunLic = document.getElementById('civFirearmLicense').value;
+
+      if(!name || !dob) return alert('Please enter at least a Full Name and Date of Birth.');
+
+      const civ = { id: Date.now(), name, dob, gender, job, driverLic, gunLic };
+      registeredCivs.push(civ);
+
+      renderCivilians();
+      toggleModal('createCivModal', false);
+
+      // Clear Inputs
+      document.getElementById('civFullName').value = '';
+      document.getElementById('civDob').value = '';
+      document.getElementById('civOccupation').value = '';
+    }
+
+    function renderCivilians() {
+      const container = document.getElementById('civilianList');
+      if (registeredCivs.length === 0) {
+        container.innerHTML = `<div id="noCivsPlaceholder" class="col-span-full bg-slate-800 p-8 rounded-xl border border-slate-700 text-slate-400 text-center">No Civilian Personas Registered Yet. Click "+ New Persona" to create one.</div>`;
+        return;
+      }
+
+      container.innerHTML = registeredCivs.map(c => `
+        <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-3 relative shadow-md">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-lg text-white">${c.name}</h3>
+              <p class="text-xs text-slate-400">DOB: ${c.dob} | ${c.gender}</p>
+            </div>
+            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-md font-mono">${c.job}</span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-700/60 flex space-x-2 text-xs">
+            <span class="px-2 py-1 rounded font-semibold ${c.driverLic === 'Valid' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}">
+              Driver: ${c.driverLic}
+            </span>
+            <span class="px-2 py-1 rounded font-semibold ${c.gunLic !== 'None' ? 'bg-blue-950 text-blue-400 border border-blue-800' : 'bg-slate-900 text-slate-500 border border-slate-700'}">
+              Firearm: ${c.gunLic}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function searchMDT() {
+      const query = document.getElementById('mdtSearchInput').value.toLowerCase();
+      const resultsDiv = document.getElementById('mdtSearchResults');
+
+      if (!query) return alert('Please enter a name to search.');
+
+      const found = registeredCivs.filter(c => c.name.toLowerCase().includes(query));
+
+      if (found.length === 0) {
+        resultsDiv.innerHTML = `<div class="p-4 bg-slate-900 rounded-lg text-rose-400">No active records found for "${query}".</div>`;
+        return;
+      }
+
+      resultsDiv.innerHTML = found.map(c => `
+        <div class="p-4 bg-slate-900 rounded-lg border border-slate-700 space-y-2">
+          <div class="flex justify-between">
+            <span class="font-bold text-white text-base">${c.name}</span>
+            <span class="text-xs text-slate-400">DOB: ${c.dob}</span>
+          </div>
+          <div class="text-xs space-y-1 text-slate-300">
+            <div><strong>Occupation:</strong> ${c.job}</div>
+            <div><strong>Driver License:</strong> <span class="${c.driverLic === 'Valid' ? 'text-emerald-400' : 'text-rose-400'}">${c.driverLic}</span></div>
+            <div><strong>Firearm License:</strong> <span class="text-blue-400">${c.gunLic}</span></div>
+          </div>
+        </div>
+      `).join('');
     }
 
     function populateOnDutyDropdowns() {
@@ -365,7 +494,7 @@ SAFR Ambulance</textarea>
       const container = document.getElementById('activeCallsContainer');
       const callEl = document.createElement('div');
       callEl.className = "p-3 bg-slate-900 rounded-lg border border-slate-700";
-      callEl.innerHTML = `<div class="flex justify-between font-bold text-rose-400 text-sm"><span>${call.title}</span><span>${call.status}</span></div><p class="text-xs text-slate-400 mt-1">Location: ${call.location}</p><p class="text-xs text-slate-500 mt-1">${call.description || ''}</p>`;
+      callEl.innerHTML = `<div class="flex justify-between font-bold text-rose-400 text-sm"><span>${call.title}</span><span>${call.status || 'OPEN'}</span></div><p class="text-xs text-slate-400 mt-1">Location: ${call.location}</p><p class="text-xs text-slate-500 mt-1">${call.description || ''}</p>`;
       container.prepend(callEl);
     });
 
@@ -382,10 +511,6 @@ SAFR Ambulance</textarea>
 
     function saveOwnerSettings() {
       alert('ER:LC Vehicle and Callsign configuration updated!');
-    }
-
-    function searchMDT() {
-      alert('Searching ER:LC Civilian & Vehicle Database...');
     }
   </script>
 </body>
