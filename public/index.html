@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FiveM / Melonly Hybrid CAD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+  </style>
+</head>
+<body class="h-screen flex flex-col">
+
+  <header class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
+    <div class="flex items-center space-x-3">
+      <div class="bg-indigo-600 text-white font-bold p-2 rounded-lg text-xl">CAD</div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight" id="cadNameDisplay">No Server Joined</h1>
+        <span class="text-xs text-slate-400" id="cadRoleDisplay">Status: Offline</span>
+      </div>
+    </div>
+
+    <nav class="flex space-x-2 bg-slate-800 p-1 rounded-lg text-sm font-medium">
+      <button onclick="switchTab('authTab')" class="nav-btn px-3 py-1.5 rounded-md bg-indigo-600 text-white">Connect</button>
+      <button onclick="switchTab('civTab')" class="nav-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-white">Civilian</button>
+      <button onclick="switchTab('mdtTab')" class="nav-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-white">LEO / MDT</button>
+      <button onclick="switchTab('dispatchTab')" class="nav-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-white">Dispatch</button>
+      <button onclick="switchTab('ownerTab')" class="nav-btn px-3 py-1.5 rounded-md text-slate-400 hover:text-white">Owner Panel</button>
+    </nav>
+  </header>
+
+  <main class="flex-1 p-6 overflow-y-auto">
+
+    <div id="authTab" class="tab-content max-w-2xl mx-auto space-y-6">
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+        <h2 class="text-xl font-bold mb-4 text-indigo-400">Create a New Server (Owner)</h2>
+        <div class="space-y-4">
+          <input id="createCadName" type="text" placeholder="Community Name (e.g. San Andreas Roleplay)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500">
+          <input id="createJoinCode" type="text" placeholder="Custom Join Code (e.g. SARP2026)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-indigo-500">
+          <button onclick="createCAD()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition">Create Server</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+        <h2 class="text-xl font-bold mb-4 text-emerald-400">Join Existing Server</h2>
+        <div class="space-y-4">
+          <input id="joinCodeInput" type="text" placeholder="Enter Join Code" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500">
+          <button onclick="joinCAD()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition">Join CAD</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="civTab" class="tab-content hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold">Civilian Database</h2>
+        <button onclick="alert('Feature active: Add civilian persona')" class="bg-indigo-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-500">+ New Persona</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="civilianList">
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-slate-400 text-center py-8">
+          No Personas Created Yet
+        </div>
+      </div>
+    </div>
+
+    <div id="mdtTab" class="tab-content hidden space-y-6">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex space-x-3">
+        <input id="mdtSearchInput" type="text" placeholder="Search Person, License Plate, or Firearm Serial..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <button onclick="searchMDT()" class="bg-indigo-600 px-6 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-500">Search</button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <h3 class="font-bold text-slate-300 mb-4">Record Search Results</h3>
+          <div id="mdtSearchResults" class="text-sm text-slate-400 space-y-3">
+            Search for a person or record above to view profile details.
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+          <h3 class="font-bold text-slate-300">Unit Status Panel</h3>
+          <select id="unitStatusSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
+            <option>10-8 | Available</option>
+            <option>10-7 | Out of Service</option>
+            <option>10-6 | Busy</option>
+            <option>10-23 | Arrived on Scene</option>
+            <option>10-97 | En Route</option>
+          </select>
+          <button onclick="updateStatus()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2 rounded-lg transition">Set Status</button>
+          <button onclick="triggerPanic()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg animate-pulse transition">🚨 OFFICER PANIC BUTTON 🚨</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dispatchTab" class="tab-content hidden space-y-6">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold">Dispatch Control Center</h2>
+        <button onclick="alert('Feature active: Create emergency call')" class="bg-rose-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-rose-500">+ New Emergency Call</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <h3 class="font-bold text-slate-300 mb-4">Active 911 / CAD Calls</h3>
+          <div id="activeCallsContainer" class="space-y-3">
+            <div class="p-3 bg-slate-900 rounded-lg border border-slate-700">
+              <div class="flex justify-between font-bold text-rose-400 text-sm">
+                <span>[CALL #101] Shots Fired</span>
+                <span>OPEN</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Location: Legion Square</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <h3 class="font-bold text-slate-300 mb-4">Active On-Duty Units</h3>
+          <div id="activeUnitsContainer" class="space-y-2">
+            <div class="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs">
+              <span class="font-bold">1-ADAM-12 (Officer John)</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-semibold">10-8 Available</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ownerTab" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+        <h2 class="text-2xl font-bold text-indigo-400">Server Customization Engine</h2>
+        
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Departments Configuration (JSON)</label>
+          <textarea id="customDepartments" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm font-mono focus:outline-none focus:border-indigo-500">["LSPD", "BCSO", "SAHP", "SAFR", "Dispatch"]</textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Penal Code & Charges (JSON Format)</label>
+          <textarea id="customPenalCode" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm font-mono focus:outline-none focus:border-indigo-500">[{"title": "Speeding", "fine": 150}, {"title": "Evading Arrest", "fine": 1000}]</textarea>
+        </div>
+
+        <button onclick="saveOwnerSettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-lg transition">Save Custom Settings</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const socket = io();
+    let currentCadId = null;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+    }
+
+    async function createCAD() {
+      const name = document.getElementById('createCadName').value;
+      const joinCode = document.getElementById('createJoinCode').value;
+      if(!name || !joinCode) return alert('Fill in all fields');
+
+      currentCadId = joinCode;
+      document.getElementById('cadNameDisplay').innerText = name;
+      document.getElementById('cadRoleDisplay').innerText = 'Role: Server Owner | Join Code: ' + joinCode;
+      
+      socket.emit('joinCadRoom', currentCadId);
+      alert('CAD Server Created Successfully!');
+      switchTab('ownerTab');
+    }
+
+    async function joinCAD() {
+      const joinCode = document.getElementById('joinCodeInput').value;
+      if(!joinCode) return alert('Enter a join code');
+
+      currentCadId = joinCode;
+      document.getElementById('cadNameDisplay').innerText = "Joined Server (" + joinCode + ")";
+      document.getElementById('cadRoleDisplay').innerText = 'Role: Member';
+
+      socket.emit('joinCadRoom', currentCadId);
+      alert('Joined CAD Successfully!');
+      switchTab('civTab');
+    }
+
+    socket.on('unitStatusChanged', (data) => {
+      if(data.isPanic) {
+        alert('🚨 PANIC BUTTON ACTIVATED BY UNIT: ' + data.unitId);
+      }
+      const container = document.getElementById('activeUnitsContainer');
+      const unitEl = document.createElement('div');
+      unitEl.className = "flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs";
+      unitEl.innerHTML = `<span class="font-bold">Unit: ${data.unitId}</span><span class="px-2 py-0.5 rounded bg-indigo-950 text-indigo-400 font-semibold">${data.status}</span>`;
+      container.prepend(unitEl);
+    });
+
+    function updateStatus() {
+      const status = document.getElementById('unitStatusSelect').value;
+      socket.emit('updateUnitStatus', { cadId: currentCadId, unitId: 'UNIT-1', status, isPanic: false });
+    }
+
+    function triggerPanic() {
+      socket.emit('updateUnitStatus', { cadId: currentCadId, unitId: 'UNIT-1', status: 'PANIC ALERT', isPanic: true });
+    }
+
+    function saveOwnerSettings() {
+      alert('Custom Penal Codes & Department configuration applied!');
+    }
+
+    function searchMDT() {
+      alert('MDT Search Executed');
+    }
+  </script>
+</body>
+</html>
