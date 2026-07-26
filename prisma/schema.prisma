@@ -1,0 +1,108 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  cadId     String?
+  role      String   @default("CIVILIAN")
+  cad       CadServer? @relation(fields: [cadId], references: [id])
+  civilians Civilian[]
+}
+
+model CadServer {
+  id          String   @id @default(uuid())
+  name        String
+  ownerId     String   @unique
+  joinCode    String   @unique
+  departments String   
+  statusCodes String   
+  penalCode   String   
+  
+  users       User[]
+  civilians   Civilian[]
+  calls       Call[]
+  warrants    Warrant[]
+  bolos       Bolo[]
+}
+
+model Civilian {
+  id            String   @id @default(uuid())
+  cadId         String
+  userId        String
+  fullName      String
+  dateOfBirth   String
+  gender        String
+  address       String
+  driverLicense String   @default("VALID")
+  weaponLicense String   @default("NONE")
+  
+  cad           CadServer @relation(fields: [cadId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+  vehicles      Vehicle[]
+  firearms      Firearm[]
+  records       Record[]
+}
+
+model Vehicle {
+  id           String   @id @default(uuid())
+  plate        String   @unique
+  model        String
+  color        String
+  registration String   @default("VALID")
+  civilianId   String
+  civilian     Civilian @relation(fields: [civilianId], references: [id])
+}
+
+model Firearm {
+  id         String   @id @default(uuid())
+  serial     String   @unique
+  weaponType String
+  civilianId String
+  civilian   Civilian @relation(fields: [civilianId], references: [id])
+}
+
+model Call {
+  id            String   @id @default(uuid())
+  cadId         String
+  title         String
+  location      String
+  description   String
+  status        String   @default("OPEN")
+  assignedUnits String   
+  cad           CadServer @relation(fields: [cadId], references: [id])
+}
+
+model Warrant {
+  id         String   @id @default(uuid())
+  cadId      String
+  civilianId String
+  reason     String
+  status     String   @default("ACTIVE")
+  cad        CadServer @relation(fields: [cadId], references: [id])
+}
+
+model Bolo {
+  id          String   @id @default(uuid())
+  cadId       String
+  type        String   
+  description String
+  cad         CadServer @relation(fields: [cadId], references: [id])
+}
+
+model Record {
+  id         String   @id @default(uuid())
+  civilianId String
+  type       String   
+  officer    String
+  charges    String   
+  fine       Int      @default(0)
+  civilian   Civilian @relation(fields: [civilianId], references: [id])
+}
