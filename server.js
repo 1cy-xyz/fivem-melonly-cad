@@ -9,17 +9,58 @@ const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-const { registerDispatchSocketHandlers } = require('./dispatch-handler');
+// ========================================================
+// ROUTE & HANDLER IMPORTS
+// ========================================================
+const erlcRouter = require('./erlc-router');
 const { registerWarrantSocketHandlers } = require('./warrants-handler');
+const { registerDispatchSocketHandlers } = require('./dispatch-handler');
 
+// Mount ER:LC API Router
+app.use('/api/erlc', erlcRouter);
+
+// Fallback Route: Serve index.html for root requests
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ========================================================
+// SOCKET.IO REAL-TIME EVENT HANDLING
+// ========================================================
 io.on('connection', (socket) => {
-  // Register UK Dispatch socket events
+  console.log(`[SOCKET connected] ID: ${socket.id}`);
+
+  // Register UK Police PNC / Warrant Socket Events
+  registerWarrantSocketHandlers(io, socket);
+
+  // Register UK Control Room / Dispatch Socket Events
   registerDispatchSocketHandlers(io, socket);
 
-  // Register PNC Warrants socket events
-  registerWarrantSocketHandlers(io, socket);
+  socket.on('disconnect', (reason) => {
+    console.log(`[SOCKET disconnected] ID: ${socket.id} | Reason: ${reason}`);
+  });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('[SERVER ERROR]', err.stack);
+  res.status(500).json({ error: 'Internal Server Error', details: err.message });
+});
+
+// Start Server
+server.listen(PORT, () => {
+  console.log(`====================================================`);
+  console.log(` UK Police CAD/MDT Server is running!`);
+  console.log(` Local URL: http://localhost:${PORT}`);
+  console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`====================================================`);
 });
 
 // Fallback for DATABASE_URL if running locally with SQLite
