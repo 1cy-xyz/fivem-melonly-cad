@@ -38,14 +38,6 @@
     ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
   </style>
 </head>
-<head>
-  <meta charset="UTF-8">
-  <title>UK Police CAD/MDT</title>
-  <!-- Socket.IO Client Library -->
-  <script src="/socket.io/socket.io.js"></script>
-  <!-- Tailwind CSS / Your Stylesheet -->
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
 <body class="h-full text-slate-100 font-sans flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
 
   <!-- Top Navigation Bar -->
@@ -68,19 +60,19 @@
 
     <!-- Center Navigation Tabs -->
     <nav class="flex p-1 bg-[#0f172a]/80 rounded-xl border border-sky-500/20 text-xs font-semibold space-x-1">
-      <button onclick="switchTab('authTab')" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 bg-sky-500 text-slate-950 font-bold glow-blue-sm">
+      <button onclick="switchTab('authTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 bg-sky-500 text-slate-950 font-bold glow-blue-sm">
         <i data-lucide="link" class="w-3.5 h-3.5"></i><span>Connect</span>
       </button>
-      <button onclick="switchTab('civTab')" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
+      <button onclick="switchTab('civTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
         <i data-lucide="user" class="w-3.5 h-3.5"></i><span>Civilian</span>
       </button>
-      <button onclick="switchTab('mdtTab')" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
+      <button onclick="switchTab('mdtTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
         <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i><span>Police / MDT</span>
       </button>
-      <button onclick="switchTab('dispatchTab')" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
+      <button onclick="switchTab('dispatchTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
         <i data-lucide="radio" class="w-3.5 h-3.5"></i><span>Dispatch</span>
       </button>
-      <button onclick="switchTab('ownerTab')" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
+      <button onclick="switchTab('ownerTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
         <i data-lucide="sliders" class="w-3.5 h-3.5"></i><span>Management</span>
       </button>
     </nav>
@@ -188,10 +180,10 @@
     </div>
 
     <!-- 3. LEO / MDT PORTAL TAB -->
-    <div id="mdtTab" class="tab-content hidden relative h-full max-w-7xl mx-auto">
+    <div id="mdtTab" class="tab-content hidden relative h-full max-w-7xl mx-auto space-y-6">
       
       <!-- Blurred Off-Duty Overlay -->
-      <div id="offDutyOverlay" class="absolute inset-0 bg-[#070a12]/90 backdrop-blur-xl z-20 flex flex-col items-center justify-center space-y-5 rounded-2xl border border-sky-500/20">
+      <div id="offDutyOverlay" class="absolute inset-0 bg-[#070a12]/90 backdrop-blur-xl z-20 flex flex-col items-center justify-center space-y-5 rounded-2xl border border-sky-500/20 min-h-[400px]">
         <div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 glow-blue">
           <i data-lucide="shield-alert" class="w-12 h-12"></i>
         </div>
@@ -203,36 +195,54 @@
           <i data-lucide="radio" class="w-4 h-4"></i><span>Sign On Duty</span>
         </button>
       </div>
-          <!-- Unit Telemetry & Status Control Panel -->
-          <div class="glass-card p-6 rounded-2xl space-y-5">
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- MDT Database Search Card -->
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-4">
+          <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
+            <i data-lucide="search" class="w-4 h-4"></i><span>NCIC Database Query</span>
+          </h3>
+          <div class="flex space-x-2">
+            <input id="mdtSearchInput" type="text" placeholder="Search Civilian Name..." class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
+            <button onclick="searchMDT()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-bold transition glow-blue">Search</button>
+          </div>
+          <div id="mdtSearchResults" class="space-y-3 pt-2">
+            <div class="text-xs text-slate-500 italic p-4 text-center border border-dashed border-sky-500/10 rounded-xl">Execute a name search to retrieve civilian profiles and licenses.</div>
+          </div>
+        </div>
+
+        <!-- Unit Telemetry & Status Control Panel -->
+        <div class="glass-card p-6 rounded-2xl space-y-5">
+          <div class="flex justify-between items-center">
             <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
               <i data-lucide="cpu" class="w-4 h-4"></i><span>Unit Status Control</span>
             </h3>
-            
-            <div class="bg-[#0b1120] p-4 rounded-xl border border-sky-500/10 space-y-2 text-xs">
-              <div class="flex justify-between"><span class="text-slate-400">Officer:</span> <span id="activeOfficerName" class="font-bold text-white">--</span></div>
-              <div class="flex justify-between"><span class="text-slate-400">Callsign:</span> <span id="activeCallsign" class="font-mono text-sky-400 font-bold">--</span></div>
-              <div class="flex justify-between"><span class="text-slate-400">Patrol Unit:</span> <span id="activeVehicle" class="text-slate-300">--</span></div>
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-[10px] font-bold uppercase text-slate-400">Select Status Code</label>
-              <select id="unitStatusSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
-                <option value="10-8 Available">10-8 | Available / Patrol</option>
-                <option value="10-6 Busy">10-6 | Busy / Traffic Stop</option>
-                <option value="10-97 On Scene">10-97 | Arrived on Scene</option>
-                <option value="10-7 Out of Service">10-7 | Out of Service</option>
-              </select>
-            </div>
-
-            <button onclick="updateStatus()" class="w-full bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold py-2 rounded-xl text-xs transition">
-              Transmit Status Update
-            </button>
-
-            <button onclick="triggerPanic()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition glow-rose animate-pulse flex items-center justify-center space-x-2">
-              <i data-lucide="siren" class="w-5 h-5"></i><span>OFFICER PANIC BUTTON</span>
-            </button>
+            <button onclick="goOffDuty()" class="text-[10px] text-rose-400 hover:underline">Go Off Duty</button>
           </div>
+          
+          <div class="bg-[#0b1120] p-4 rounded-xl border border-sky-500/10 space-y-2 text-xs">
+            <div class="flex justify-between"><span class="text-slate-400">Officer:</span> <span id="activeOfficerName" class="font-bold text-white">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Callsign:</span> <span id="activeCallsign" class="font-mono text-sky-400 font-bold">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Patrol Unit:</span> <span id="activeVehicle" class="text-slate-300">--</span></div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-[10px] font-bold uppercase text-slate-400">Select Status Code</label>
+            <select id="unitStatusSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
+              <option value="10-8 Available">10-8 | Available / Patrol</option>
+              <option value="10-6 Busy">10-6 | Busy / Traffic Stop</option>
+              <option value="10-97 On Scene">10-97 | Arrived on Scene</option>
+              <option value="10-7 Out of Service">10-7 | Out of Service</option>
+            </select>
+          </div>
+
+          <button onclick="updateStatus()" class="w-full bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold py-2 rounded-xl text-xs transition">
+            Transmit Status Update
+          </button>
+
+          <button onclick="triggerPanic()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition glow-rose animate-pulse flex items-center justify-center space-x-2">
+            <i data-lucide="siren" class="w-5 h-5"></i><span>OFFICER PANIC BUTTON</span>
+          </button>
         </div>
       </div>
     </div>
@@ -421,281 +431,29 @@ SAFR Ambulance</textarea>
       </div>
     </div>
   </div>
+
   <script>
-    // 1. Initialize Socket.IO connection
-  const socket = io();
-
-  // Local state arrays
-  let currentCadId = null;
-  let isOnDuty = false;
-  let registeredCivs = [];
-  let localWarrants = [];
-  let localArrests = [];
-  let localCalls = [];
-  let localUnits = [];
-
-  function switchUkMdtTab(tabName) {
-    document.getElementById('ukTabPnc').classList.toggle('hidden', tabName !== 'pnc');
-    document.getElementById('ukTabDispatch').classList.toggle('hidden', tabName !== 'dispatch');
-    document.getElementById('ukTabErlc').classList.toggle('hidden', tabName !== 'erlc');
-
-    document.getElementById('tabBtnPnc').className = tabName === 'pnc' ? "pb-3 text-xs font-bold uppercase border-b-2 border-sky-400 text-sky-400 tracking-wider" : "pb-3 text-xs font-bold uppercase border-b-2 border-transparent text-slate-400 hover:text-slate-200 tracking-wider";
-    document.getElementById('tabBtnDispatch').className = tabName === 'dispatch' ? "pb-3 text-xs font-bold uppercase border-b-2 border-sky-400 text-sky-400 tracking-wider" : "pb-3 text-xs font-bold uppercase border-b-2 border-transparent text-slate-400 hover:text-slate-200 tracking-wider";
-    document.getElementById('tabBtnErlc').className = tabName === 'erlc' ? "pb-3 text-xs font-bold uppercase border-b-2 border-sky-400 text-sky-400 tracking-wider" : "pb-3 text-xs font-bold uppercase border-b-2 border-transparent text-slate-400 hover:text-slate-200 tracking-wider";
-
-    if (tabName === 'erlc') refreshERLCRoster();
-  }
-
-  // 2. Listen for PNC Warrants Socket Events
-  socket.on('warrants:initialData', (data) => {
-    localWarrants = data.warrants || [];
-    localArrests = data.arrests || [];
-    renderActiveWarrants();
-  });
-
-  socket.on('warrants:added', (w) => { 
-    localWarrants.push(w); 
-    renderActiveWarrants(); 
-  });
-
-  socket.on('warrants:updated', (w) => {
-    const idx = localWarrants.findIndex(item => item.id === w.id);
-    if (idx !== -1) localWarrants[idx] = w;
-    renderActiveWarrants();
-  });
-
-  socket.on('arrests:added', (a) => { 
-    localArrests.push(a); 
-  });
-
-  // 3. Listen for Control Room Dispatch Socket Events
-  socket.on('dispatch:initialData', (data) => {
-    localCalls = data.calls || [];
-    localUnits = data.units || [];
-    renderCadCalls();
-    renderActiveUnits();
-  });
-
-  socket.on('dispatch:callCreated', (call) => { 
-    localCalls.unshift(call); 
-    renderCadCalls(); 
-  });
-
-  socket.on('dispatch:callUpdated', (call) => {
-    const idx = localCalls.findIndex(c => c.id === call.id);
-    if (idx !== -1) localCalls[idx] = call;
-    renderCadCalls();
-  });
-
-  socket.on('dispatch:callClosed', (id) => {
-    localCalls = localCalls.filter(c => c.id !== id);
-    renderCadCalls();
-  });
-
-  socket.on('dispatch:unitsUpdated', (units) => {
-    localUnits = units;
-    renderActiveUnits();
-  });
-
-  // --- PNC SEARCH LOGIC ---
-  function queryPNCDatabase() {
-    const rawQuery = document.getElementById('pncSearchInput').value.trim().toLowerCase();
-    const resultsContainer = document.getElementById('pncSearchResults');
-
-    if (!rawQuery) {
-      resultsContainer.innerHTML = `<div class="text-xs text-slate-400">Enter a name above to query active arrest warrants and custody history.</div>`;
-      return;
-    }
-
-    const matchesWarrants = localWarrants.filter(w => w.subjectName && w.subjectName.toLowerCase().includes(rawQuery));
-    const matchesArrests = localArrests.filter(a => a.subjectName && a.subjectName.toLowerCase().includes(rawQuery));
-
-    if (matchesWarrants.length === 0 && matchesArrests.length === 0) {
-      resultsContainer.innerHTML = `
-        <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 text-slate-400 text-xs">
-          <strong>PNC Search: NO RECORD FOUND</strong> for "${rawQuery}". No active warnings or offences logged.
-        </div>`;
-      return;
-    }
-
-    resultsContainer.innerHTML = `
-      <div class="p-4 bg-slate-950 rounded-xl border border-sky-500/20 space-y-3">
-        <h4 class="font-bold text-white text-sm">PNC Results for "${rawQuery.toUpperCase()}"</h4>
-        <div>
-          <span class="font-bold text-rose-400 text-[11px] uppercase">Wanted Person Alerts (${matchesWarrants.filter(w => w.status === 'ACTIVE').length})</span>
-          ${matchesWarrants.filter(w => w.status === 'ACTIVE').map(w => `
-            <div class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs flex justify-between items-center my-1">
-              <span><strong>[${w.severity}]</strong> ${w.charges}</span>
-              <button onclick="serveWarrantById('${w.id}')" class="bg-emerald-500 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded">Execute Warrant</button>
-            </div>
-          `).join('') || '<p class="text-slate-500 text-[11px] italic">No active warrants.</p>'}
-        </div>
-        <div>
-          <span class="font-bold text-slate-300 text-[11px] uppercase">Custody & Arrest History (${matchesArrests.length})</span>
-          ${matchesArrests.map(a => `
-            <div class="p-2 bg-slate-900 rounded-lg text-xs text-slate-300 my-1">
-              <span class="text-slate-500 text-[10px] block">Arresting Officer: ${a.officer || 'N/A'}</span>
-              ${a.charges}
-            </div>
-          `).join('') || '<p class="text-slate-500 text-[11px] italic">No prior custody record.</p>'}
-        </div>
-      </div>`;
-  }
-
-  // --- DISPATCH ACTIONS ---
-  function submitCreateCall() {
-    const location = document.getElementById('callModalLocation').value.trim();
-    const title = document.getElementById('callModalTitle').value.trim();
-    const grade = document.getElementById('callModalGrade').value;
-    const details = document.getElementById('callModalDetails').value.trim();
-
-    if (!location || !title) return alert('Location and Incident title are required.');
-
-    socket.emit('dispatch:createCall', { location, title, grade, details });
-    toggleUkModal('createCallModal', false);
-  }
-
-  function updateMyStatus(status) {
-    const callsign = prompt("Enter your Callsign (e.g. PC-12 / Alpha-1):", "PC-12") || "PC-12";
-    const name = prompt("Enter your Officer Name:", "Constable") || "Constable";
-    socket.emit('dispatch:updateUnitStatus', { callsign, name, status, division: 'Response' });
-  }
-
-  function assignSelfToCall(callId) {
-    const callsign = prompt("Enter Unit Callsign to attach:", "PC-12");
-    if (callsign) socket.emit('dispatch:assignUnit', { callId, callsign });
-  }
-
-  function closeCadCall(callId) {
-    socket.emit('dispatch:closeCall', callId);
-  }
-
-  function renderCadCalls() {
-    const container = document.getElementById('cadCallsContainer');
-    const openCalls = localCalls.filter(c => c.status === 'OPEN');
-
-    if (openCalls.length === 0) {
-      container.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-6">No active 999 incidents in queue.</div>`;
-      return;
-    }
-
-    container.innerHTML = openCalls.map(c => `
-      <div class="p-4 bg-slate-950 rounded-xl border border-sky-500/20 text-xs space-y-2">
-        <div class="flex justify-between items-start">
-          <div>
-            <span class="font-mono text-sky-400 font-bold">${c.id}</span>
-            <h4 class="text-white font-bold text-sm">${c.title}</h4>
-            <span class="text-slate-400 text-[11px]">📍 ${c.location}</span>
-          </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${c.grade.includes('Grade 1') ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400'}">${c.grade}</span>
-        </div>
-        <p class="text-slate-300 bg-slate-900 p-2 rounded-lg">${c.details}</p>
-        <div class="flex justify-between items-center pt-1">
-          <span class="text-slate-400 text-[11px]">Attached Units: <strong>${c.assignedUnits.join(', ') || 'None'}</strong></span>
-          <div class="flex space-x-2">
-            <button onclick="assignSelfToCall('${c.id}')" class="bg-sky-500 text-slate-950 font-bold text-[10px] px-2.5 py-1 rounded">Attach Unit</button>
-            <button onclick="closeCadCall('${c.id}')" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded">Clear CAD</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderActiveUnits() {
-    const container = document.getElementById('unitsListContainer');
-    if (localUnits.length === 0) {
-      container.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-4">No units currently signed on.</div>`;
-      return;
-    }
-
-    container.innerHTML = localUnits.map(u => `
-      <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-        <div>
-          <span class="font-bold text-white">${u.callsign}</span>
-          <span class="text-slate-400 text-[10px] block">${u.name} (${u.division})</span>
-        </div>
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${u.status === 'AVAILABLE' ? 'bg-emerald-500/20 text-emerald-400' : u.status === 'EN_ROUTE' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'}">${u.status}</span>
-      </div>
-    `).join('');
-  }
-
-  function submitWarrantForm() {
-    const subjectName = document.getElementById('warrantModalSubject').value.trim();
-    const charges = document.getElementById('warrantModalCharges').value.trim();
-    const severity = document.getElementById('warrantModalSeverity').value;
-    if (!subjectName || !charges) return alert('Subject name and offence required.');
-
-    socket.emit('warrants:issue', { subjectName, charges, severity });
-    toggleUkModal('issueWarrantModal', false);
-  }
-
-  function submitArrestForm() {
-    const subjectName = document.getElementById('arrestModalSubject').value.trim();
-    const officer = document.getElementById('arrestModalOfficer').value.trim();
-    const charges = document.getElementById('arrestModalCharges').value.trim();
-    if (!subjectName || !charges) return alert('Subject name and offences required.');
-
-    socket.emit('arrests:log', { subjectName, officer, charges });
-    toggleUkModal('logArrestModal', false);
-  }
-
-  function serveWarrantById(warrantId) {
-    socket.emit('warrants:serve', warrantId);
-  }
-
-  function renderActiveWarrants() {
-    const container = document.getElementById('activeWarrantsList');
-    const active = localWarrants.filter(w => w.status === 'ACTIVE');
-    if (active.length === 0) {
-      container.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-4">No active PNC wanted alerts.</div>`;
-      return;
-    }
-    container.innerHTML = active.map(w => `
-      <div class="p-3 bg-slate-950 rounded-xl border border-rose-500/20 text-xs space-y-1">
-        <div class="flex justify-between font-bold text-rose-400">
-          <span>${w.subjectName}</span>
-          <span class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded">${w.severity}</span>
-        </div>
-        <p class="text-slate-300">${w.charges}</p>
-        <div class="flex justify-between items-center pt-1">
-          <span class="text-[9px] font-mono text-slate-500">${w.id}</span>
-          <button onclick="serveWarrantById('${w.id}')" class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">Clear</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  async function refreshERLCRoster() {
+    // Initialize Socket Connection safely
+    let socket = null;
     try {
-      const res = await fetch('/api/erlc/players');
-      const players = await res.json();
-      const tbody = document.getElementById('erlcPlayersTable');
-      if (!players || players.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-slate-500">No players online.</td></tr>`;
-        return;
+      if (typeof io !== 'undefined') {
+        socket = io();
       }
-      tbody.innerHTML = players.map(p => `
-        <tr class="hover:bg-slate-800/30">
-          <td class="py-3 px-3 font-bold text-white">${p.Name}</td>
-          <td class="py-3 px-3"><span class="px-2.5 py-1 rounded text-[10px] font-bold ${p.Team === 'Police' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-slate-800 text-slate-300'}">${p.Team || 'Civilian'}</span></td>
-          <td class="py-3 px-3 text-slate-400">${p.Permission || 'Member'}</td>
-        </tr>
-      `).join('');
-    } catch (e) {
-      console.error('ER:LC API error:', e);
+    } catch(e) {
+      console.warn("Socket.io standalone mode");
     }
-  }
 
-  function toggleUkModal(id, show) {
-    document.getElementById(id).classList.toggle('hidden', !show);
-  }
+    let currentCadId = null;
+    let isOnDuty = false;
+    let registeredCivs = [];
+
     // Live Clock Feature
     setInterval(() => {
       const now = new Date();
       document.getElementById('liveClock').innerText = now.toUTCString().split(' ')[4] + ' UTC';
     }, 1000);
 
-    function switchTab(tabId) {
+    function switchTab(tabId, btnTarget) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       const activeTab = document.getElementById(tabId);
       if (activeTab) activeTab.classList.remove('hidden');
@@ -705,8 +463,11 @@ SAFR Ambulance</textarea>
         btn.classList.remove('bg-sky-500', 'text-slate-950', 'font-bold', 'glow-blue-sm');
         btn.classList.add('text-slate-400');
       });
-      event.currentTarget.classList.add('bg-sky-500', 'text-slate-950', 'font-bold', 'glow-blue-sm');
-      event.currentTarget.classList.remove('text-slate-400');
+
+      if (btnTarget) {
+        btnTarget.classList.add('bg-sky-500', 'text-slate-950', 'font-bold', 'glow-blue-sm');
+        btnTarget.classList.remove('text-slate-400');
+      }
     }
 
     function toggleModal(modalId, show) {
