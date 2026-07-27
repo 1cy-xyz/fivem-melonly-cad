@@ -54,15 +54,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', details: err.message });
 });
 
-// Start Server
-server.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(` UK Police CAD/MDT Server is running!`);
-  console.log(` Local URL: http://localhost:${PORT}`);
-  console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`====================================================`);
-});
-
 // Fallback for DATABASE_URL if running locally with SQLite
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:./dev.db";
