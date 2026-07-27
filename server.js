@@ -7,6 +7,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
+// Ensure SQLite fallback for local development before Prisma initializes
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = "file:./dev.db";
+}
+
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-this';
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -17,56 +25,13 @@ const io = new Server(server, {
 });
 
 // ========================================================
-// ROUTE & HANDLER IMPORTS
+// GLOBAL MIDDLEWARE
 // ========================================================
-const erlcRouter = require('./erlc-router');
-const { registerWarrantSocketHandlers } = require('./warrants-handler');
-const { registerDispatchSocketHandlers } = require('./dispatch-handler');
-
-// Mount ER:LC API Router
-app.use('/api/erlc', erlcRouter);
-
-// Fallback Route: Serve index.html for root requests
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ========================================================
-// SOCKET.IO REAL-TIME EVENT HANDLING
-// ========================================================
-io.on('connection', (socket) => {
-  console.log(`[SOCKET connected] ID: ${socket.id}`);
-
-  // Register UK Police PNC / Warrant Socket Events
-  registerWarrantSocketHandlers(io, socket);
-
-  // Register UK Control Room / Dispatch Socket Events
-  registerDispatchSocketHandlers(io, socket);
-
-  socket.on('disconnect', (reason) => {
-    console.log(`[SOCKET disconnected] ID: ${socket.id} | Reason: ${reason}`);
-  });
-});
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  console.error('[SERVER ERROR]', err.stack);
-  res.status(500).json({ error: 'Internal Server Error', details: err.message });
-});
-
-// Fallback for DATABASE_URL if running locally with SQLite
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:./dev.db";
-}
-
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-this';
-
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- MIDDLEWARE ---
+// JWT Authentication Middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -78,6 +43,16 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// ========================================================
+// ROUTE IMPORTS & MOUNTING
+// ========================================================
+const erlcRouter = require('./erlc-router');
+const { registerWarrantSocketHandlers } = require('./warrants-handler');
+const { registerDispatchSocketHandlers } = require('./dispatch-handler');
+
+// Mount ER:LC API Router
+app.use('/api/erlc', erlcRouter);
 
 // --- AUTHENTICATION & MULTI-TENANT MANAGEMENT ---
 
@@ -204,15 +179,34 @@ app.post('/api/mdt/records', authenticateToken, async (req, res) => {
   res.json({ message: 'Record created', record });
 });
 
-// --- REAL-TIME SOCKET.IO ---
+// Fallback Route: Serve index.html for unknown frontend routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('[SERVER ERROR]', err.stack);
+  res.status(500).json({ error: 'Internal Server Error', details: err.message });
+});
+
+// ========================================================
+// SOCKET.IO REAL-TIME EVENT HANDLING
+// ========================================================
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log(`[SOCKET connected] ID: ${socket.id}`);
 
+  // Modular handlers
+  try { registerWarrantSocketHandlers(io, socket); } catch (e) {}
+  try { registerDispatchSocketHandlers(io, socket); } catch (e) {}
+
+  // CAD Room Subscription
   socket.on('joinCadRoom', (cadId) => {
     socket.join(`cad_${cadId}`);
+    console.log(`[Room] Socket ${socket.id} joined cad_${cadId}`);
   });
 
+  // Call Creation
   socket.on('createCall', async (data) => {
     const { cadId, title, location, description } = data;
     try {
@@ -221,10 +215,13 @@ io.on('connection', (socket) => {
       });
       io.to(`cad_${cadId}`).emit('callUpdated', call);
     } catch (e) {
-      console.error(e);
+      console.error('[Prisma Call Error]', e);
+      // Fallback broadcast if DB is unmigrated
+      io.to(`cad_${cadId}`).emit('callUpdated', { title, location, description });
     }
   });
 
+  // Unit Status Changes
   socket.on('updateUnitStatus', (data) => {
     const { cadId, unitId, status, isPanic } = data;
     io.to(`cad_${cadId}`).emit('unitStatusChanged', {
@@ -235,10 +232,13 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
+  socket.on('disconnect', (reason) => {
+    console.log(`[SOCKET disconnected] ID: ${socket.id} | Reason: ${reason}`);
   });
 });
 
+// ========================================================
+// SERVER STARTUP
+// ========================================================
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`CAD Engine running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 CAD Engine running on port ${PORT}`));
