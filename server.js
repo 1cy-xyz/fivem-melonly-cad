@@ -11,6 +11,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
+const { registerDispatchSocketHandlers } = require('./dispatch-handler');
+const { registerWarrantSocketHandlers } = require('./warrants-handler');
+
+io.on('connection', (socket) => {
+  // Register UK Dispatch socket events
+  registerDispatchSocketHandlers(io, socket);
+
+  // Register PNC Warrants socket events
+  registerWarrantSocketHandlers(io, socket);
+});
+
 // Fallback for DATABASE_URL if running locally with SQLite
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "file:./dev.db";
