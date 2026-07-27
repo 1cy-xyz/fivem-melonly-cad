@@ -398,7 +398,7 @@
   <div id="createCallModal" class="fixed inset-0 bg-[#070a12]/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="glass-card border border-rose-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 relative glow-rose">
       <h3 class="text-lg font-bold text-rose-400 flex items-center space-x-2">
-        <i data-lucide="phone-call" class="w-5 h-5"></i><span>Dispatch 911 Emergency</span>
+        <i data-lucide="phone-call" class="w-5 h-5"></i><span>Dispatch 999 Emergency</span>
       </h3>
       
       <div class="space-y-3">
@@ -418,7 +418,7 @@
 
       <div class="flex space-x-3 pt-3">
         <button onclick="toggleModal('createCallModal', false)" class="flex-1 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700">Cancel</button>
-        <button onclick="submit911Call()" class="flex-1 bg-rose-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-rose-500 glow-rose">Transmit 911</button>
+        <button onclick="submit911Call()" class="flex-1 bg-rose-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-rose-500 glow-rose">Transmit 999</button>
       </div>
     </div>
   </div>
@@ -574,13 +574,87 @@
       document.getElementById('offDutyOverlay').classList.add('hidden');
       toggleModal('onDutyModal', false);
 
+      let activeUnitsList = [];
+
       if (socket) {
-        socket.emit('updateUnitStatus', {
-          cadId: currentCadId,
-          unitId: `${callsign} (${name})`,
-          status: '10-8 Available',
-          isPanic: false
-        });
+            // Listen for unit updates
+            socket.on('unitStatusChanged', (data) => {
+              if (data.isPanic) {
+                alert('🚨 EMERGENCY PANIC ACTIVATED BY UNIT: ' + data.unitId);
+              }
+      
+              if (!activeUnitsList.includes(data.unitId)) {
+                activeUnitsList.push(data.unitId);
+              }
+      
+              const container = document.getElementById('activeUnitsContainer');
+              const unitEl = document.createElement('div');
+              unitEl.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
+              unitEl.innerHTML = `
+                <span class="font-bold ${data.isPanic ? 'text-rose-400 animate-pulse' : 'text-slate-200'}">${data.unitId}</span>
+                <span class="px-2.5 py-0.5 rounded-lg ${data.isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} font-bold border">${data.status}</span>
+              `;
+              container.prepend(unitEl);
+            });
+      
+            // Listen for call updates / panic call creation
+            socket.on('callUpdated', (call) => {
+              const container = document.getElementById('activeCallsContainer');
+              const assignedUnits = typeof call.assignedUnits === 'string' ? JSON.parse(call.assignedUnits || '[]') : (call.assignedUnits || []);
+              
+              const isPanic = call.title.includes('PANIC') || call.title.includes('🚨');
+              const existingEl = document.getElementById(`call-${call.id}`);
+      
+              const cardContent = `
+                <div class="flex justify-between font-bold ${isPanic ? 'text-rose-400' : 'text-sky-400'} text-xs">
+                  <span>${call.title}</span>
+                  <span class="text-[10px] ${isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} px-2 py-0.5 rounded border">
+                    ${isPanic ? 'PRIORITY 1 EMERGENCY' : 'ACTIVE'}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-300"><strong>Location:</strong> ${call.location}</p>
+                <p class="text-[11px] text-slate-400">${call.description || ''}</p>
+                
+                <!-- Assigned Units Section -->
+                <div class="pt-2 border-t border-sky-500/10 flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <span class="text-slate-400 font-bold">Attached Units:</span>
+                  ${assignedUnits.length > 0 
+                    ? assignedUnits.map(u => `<span class="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono border border-sky-500/30">${u}</span>`).join('') 
+                    : '<span class="text-slate-500 italic">None Attached</span>'}
+                </div>
+      
+                <!-- Dispatch Quick Assign Action -->
+                <div class="pt-2 flex items-center space-x-2">
+                  <select id="assign-select-${call.id}" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-lg p-1.5 text-slate-200 flex-1 focus:outline-none">
+                    <option value="">-- Assign On-Duty Unit --</option>
+                    ${activeUnitsList.map(u => `<option value="${u}">${u}</option>`).join('')}
+                  </select>
+                  <button onclick="assignUnit('${call.id}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition">
+                    Attach
+                  </button>
+                </div>
+              `;
+      
+              if (existingEl) {
+                existingEl.innerHTML = cardContent;
+              } else {
+                const callEl = document.createElement('div');
+                callEl.id = `call-${call.id}`;
+                callEl.className = `p-3.5 bg-[#0b1120] rounded-xl border ${isPanic ? 'border-rose-500/50 bg-rose-950/10 glow-rose' : 'border-sky-500/20'} space-y-2`;
+                callEl.innerHTML = cardContent;
+                container.prepend(callEl);
+              }
+            });
+          }
+
+    // Function to attach selected unit to a call from Dispatch UI
+    function assignUnit(callId) {
+      const select = document.getElementById(`assign-select-${callId}`);
+      const unitId = select ? select.value : null;
+      if (!unitId) return alert('Select an active unit to assign.');
+
+      if (socket) {
+        socket.emit('assignUnitToCall', { cadId: currentCadId, callId, unitId });
       }
     }
 
