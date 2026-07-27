@@ -443,7 +443,245 @@ SAFR Ambulance</textarea>
       </div>
     </div>
   </div>
-
+    <!-- ======================================================== -->
+  <!-- WARRANTS & ARRESTS MDT PANELS                            -->
+  <!-- ======================================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
+    <!-- NCIC Search Panel -->
+    <div class="lg:col-span-2 bg-slate-900/80 border border-sky-500/20 p-6 rounded-2xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sky-400 text-sm uppercase">NCIC Person & Warrant Lookup</h3>
+        <div class="flex space-x-2">
+          <button onclick="toggleWarrantModal('issueWarrantModal', true)" class="bg-rose-500/10 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-rose-500/20">
+            + Issue Warrant
+          </button>
+          <button onclick="toggleWarrantModal('logArrestModal', true)" class="bg-sky-500/10 text-sky-400 border border-sky-500/30 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-sky-500/20">
+            + Log Arrest
+          </button>
+        </div>
+      </div>
+  
+      <div class="flex space-x-2">
+        <input id="warrantSearchInput" type="text" placeholder="Search civilian name..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white">
+        <button onclick="queryNCICDatabase()" class="bg-sky-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs">Query</button>
+      </div>
+  
+      <div id="ncicSearchResults" class="text-xs text-slate-400">Search a civilian name to pull up active warrants and arrest history.</div>
+    </div>
+  
+    <!-- Active Outstanding Warrants Panel -->
+    <div class="bg-slate-900/80 border border-rose-500/20 p-6 rounded-2xl space-y-4">
+      <h3 class="font-bold text-rose-400 text-sm uppercase">Active Outstanding Warrants</h3>
+      <div id="activeWarrantsList" class="space-y-3">
+        <div class="text-xs text-slate-500 italic text-center py-4">No active warrants.</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ======================================================== -->
+  <!-- ROBLOX ER:LC LIVE IN-GAME PLAYER ROSTER                  -->
+  <!-- ======================================================== -->
+  <div class="bg-slate-900/80 border border-sky-500/20 p-6 rounded-2xl space-y-4 my-6">
+    <div class="flex justify-between items-center">
+      <h3 class="font-bold text-white text-sm">Live Roblox ER:LC Player Roster</h3>
+      <button onclick="refreshERLCRoster()" class="bg-sky-500 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs">Refresh API</button>
+    </div>
+    <table class="w-full text-left text-xs">
+      <thead class="border-b border-slate-800 text-slate-400 uppercase">
+        <tr>
+          <th class="py-2 px-3">Username</th>
+          <th class="py-2 px-3">Team</th>
+          <th class="py-2 px-3">Role</th>
+        </tr>
+      </thead>
+      <tbody id="erlcPlayersTable" class="divide-y divide-slate-800/50 text-slate-200">
+        <tr><td colspan="3" class="text-center py-4 text-slate-500">Click Refresh API to sync.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- MODAL: ISSUE WARRANT -->
+  <div id="issueWarrantModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-rose-500/30 rounded-2xl p-6 max-w-md w-full space-y-4">
+      <h3 class="text-lg font-bold text-rose-400">Issue Warrant</h3>
+      <input id="warrantModalSubject" type="text" placeholder="Subject Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white">
+      <input id="warrantModalCharges" type="text" placeholder="Charges / Offenses" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white">
+      <select id="warrantModalSeverity" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300">
+        <option value="Misdemeanor">Misdemeanor Warrant</option>
+        <option value="Felony">Felony Warrant</option>
+        <option value="High Risk / Armed">High Risk / Armed & Dangerous</option>
+      </select>
+      <div class="flex space-x-2 pt-2">
+        <button onclick="toggleWarrantModal('issueWarrantModal', false)" class="flex-1 bg-slate-800 py-2 rounded-xl text-xs font-bold text-slate-300">Cancel</button>
+        <button onclick="submitWarrantForm()" class="flex-1 bg-rose-600 py-2 rounded-xl text-xs font-bold text-white">Issue</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MODAL: LOG ARREST -->
+  <div id="logArrestModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-sky-500/30 rounded-2xl p-6 max-w-md w-full space-y-4">
+      <h3 class="text-lg font-bold text-sky-400">Log Arrest Record</h3>
+      <input id="arrestModalSubject" type="text" placeholder="Arrestee Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white">
+      <input id="arrestModalOfficer" type="text" placeholder="Arresting Officer & Callsign" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white">
+      <textarea id="arrestModalCharges" rows="3" placeholder="Charges & Sentence Details" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"></textarea>
+      <div class="flex space-x-2 pt-2">
+        <button onclick="toggleWarrantModal('logArrestModal', false)" class="flex-1 bg-slate-800 py-2 rounded-xl text-xs font-bold text-slate-300">Cancel</button>
+        <button onclick="submitArrestForm()" class="flex-1 bg-sky-500 text-slate-950 py-2 rounded-xl text-xs font-bold">Log Record</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- CLIENT JAVASCRIPT LOGIC -->
+  <script>
+    let localWarrants = [];
+    let localArrests = [];
+  
+    // Assuming `socket` is already initialized in your main CAD script
+    if (typeof socket !== 'undefined') {
+      socket.on('warrants:initialData', (data) => {
+        localWarrants = data.warrants || [];
+        localArrests = data.arrests || [];
+        renderActiveWarrants();
+      });
+  
+      socket.on('warrants:added', (warrant) => {
+        localWarrants.push(warrant);
+        renderActiveWarrants();
+      });
+  
+      socket.on('warrants:updated', (warrant) => {
+        const index = localWarrants.findIndex(w => w.id === warrant.id);
+        if (index !== -1) localWarrants[index] = warrant;
+        renderActiveWarrants();
+      });
+  
+      socket.on('arrests:added', (arrest) => {
+        localArrests.push(arrest);
+      });
+    }
+  
+    function submitWarrantForm() {
+      const subjectName = document.getElementById('warrantModalSubject').value.trim();
+      const charges = document.getElementById('warrantModalCharges').value.trim();
+      const severity = document.getElementById('warrantModalSeverity').value;
+  
+      if (!subjectName || !charges) return alert('Subject name and charges required.');
+  
+      socket.emit('warrants:issue', { subjectName, charges, severity });
+      toggleWarrantModal('issueWarrantModal', false);
+    }
+  
+    function submitArrestForm() {
+      const subjectName = document.getElementById('arrestModalSubject').value.trim();
+      const officer = document.getElementById('arrestModalOfficer').value.trim();
+      const charges = document.getElementById('arrestModalCharges').value.trim();
+  
+      if (!subjectName || !charges) return alert('Subject name and charges required.');
+  
+      socket.emit('arrests:log', { subjectName, officer, charges });
+      toggleWarrantModal('logArrestModal', false);
+    }
+  
+    function serveWarrantById(warrantId) {
+      socket.emit('warrants:serve', warrantId);
+    }
+  
+    function renderActiveWarrants() {
+      const container = document.getElementById('activeWarrantsList');
+      const active = localWarrants.filter(w => w.status === 'ACTIVE');
+  
+      if (active.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-4">No active warrants.</div>`;
+        return;
+      }
+  
+      container.innerHTML = active.map(w => `
+        <div class="p-3 bg-slate-950 rounded-xl border border-rose-500/20 text-xs space-y-1">
+          <div class="flex justify-between font-bold text-rose-400">
+            <span>${w.subjectName}</span>
+            <span class="text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">${w.severity}</span>
+          </div>
+          <p class="text-slate-300">${w.charges}</p>
+          <div class="flex justify-between items-center pt-1">
+            <span class="text-[9px] font-mono text-slate-500">${w.id}</span>
+            <button onclick="serveWarrantById('${w.id}')" class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold hover:bg-emerald-500/30">Serve</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  
+    function queryNCICDatabase() {
+      const query = document.getElementById('warrantSearchInput').value.trim().toLowerCase();
+      const resultsContainer = document.getElementById('ncicSearchResults');
+  
+      if (!query) {
+        resultsContainer.innerHTML = `<div class="text-xs text-slate-400">Search a civilian name to pull up active warrants and arrest history.</div>`;
+        return;
+      }
+  
+      const matches = localWarrants.filter(w => w.subjectName.toLowerCase().includes(query));
+      const arrestMatches = localArrests.filter(a => a.subjectName.toLowerCase().includes(query));
+  
+      if (matches.length === 0 && arrestMatches.length === 0) {
+        resultsContainer.innerHTML = `<div class="text-xs text-slate-400 py-2">No warrants or arrest records found for "${query}".</div>`;
+        return;
+      }
+  
+      resultsContainer.innerHTML = `
+        <div class="p-4 bg-slate-950 rounded-xl border border-sky-500/20 space-y-3">
+          <h4 class="font-bold text-white text-sm">Query Results for "${query}"</h4>
+          
+          <div>
+            <span class="font-bold text-rose-400 text-[11px] uppercase">Active Warrants (${matches.filter(w => w.status === 'ACTIVE').length})</span>
+            ${matches.filter(w => w.status === 'ACTIVE').map(w => `
+              <div class="p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs flex justify-between items-center my-1">
+                <span><strong>[${w.severity}]</strong> ${w.charges}</span>
+                <button onclick="serveWarrantById('${w.id}')" class="bg-emerald-500 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded">Clear</button>
+              </div>
+            `).join('') || '<p class="text-slate-500 text-[11px] italic">None</p>'}
+          </div>
+  
+          <div>
+            <span class="font-bold text-slate-300 text-[11px] uppercase">Arrest History (${arrestMatches.length})</span>
+            ${arrestMatches.map(a => `
+              <div class="p-2 bg-slate-900 rounded-lg text-xs text-slate-300 my-1">
+                <span class="text-slate-500 text-[10px] block">Officer: ${a.officer || 'N/A'}</span>
+                ${a.charges}
+              </div>
+            `).join('') || '<p class="text-slate-500 text-[11px] italic">None</p>'}
+          </div>
+        </div>
+      `;
+    }
+  
+    async function refreshERLCRoster() {
+      try {
+        const res = await fetch('/api/erlc/players');
+        const players = await res.json();
+        const tbody = document.getElementById('erlcPlayersTable');
+  
+        if (!players || players.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-slate-500">No players online.</td></tr>`;
+          return;
+        }
+  
+        tbody.innerHTML = players.map(p => `
+          <tr>
+            <td class="py-2 px-3 font-bold text-white">${p.Name}</td>
+            <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.Team === 'Police' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-300'}">${p.Team || 'Civilian'}</span></td>
+            <td class="py-2 px-3 text-slate-400">${p.Permission || 'Member'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load ER:LC roster:', e);
+      }
+    }
+  
+    function toggleWarrantModal(id, show) {
+      document.getElementById(id).classList.toggle('hidden', !show);
+    }
+  </script>
   <script>
     // Initialize Socket Connection safely
     let socket = null;
