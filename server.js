@@ -237,6 +237,135 @@ io.on('connection', (socket) => {
   });
 });
 
+// Track active units in-memory per CAD room (cadId -> Map(socketId -> unitData))
+const activeCadUnits = new Map();
+
+io.on('connection', (socket) => {
+  console.log(`[SOCKET connected] ID: ${socket.id}`);
+
+  // Modular handlers
+  try { registerWarrantSocketHandlers(io, socket); } catch (e) {}
+  try { registerDispatchSocketHandlers(io, socket); } catch (e) {}
+
+  // CAD Room Subscription & On-Duty Tracking
+  socket.on('joinCadRoom', (cadId) => {
+    socket.join(`cad_${cadId}`);
+    socket.cadId = cadId;
+    console.log(`[Room] Socket ${socket.id} joined cad_${cadId}`);
+  });
+
+  // Handle Standard 911 Call Creation
+  socket.on('createCall', async (data) => {
+    const { cadId, title, location, description } = data;
+    try {
+      // Count total calls to generate a readable Call Number (e.g., #101)
+      const callCount = await prisma.call.count({ where: { cadId: Number(cadId) || 0 } });
+      const callNumber = `#${101 + callCount}`;
+
+      const call = await prisma.call.create({
+        data: {
+          cadId: Number(cadId) || 0,
+          title: `${callNumber} - ${title}`,
+          location,
+          description: description || 'No additional details.',
+          assignedUnits: JSON.stringify([])
+        }
+      });
+
+      io.to(`cad_${cadId}`).emit('callUpdated', call);
+    } catch (e) {
+      console.error('[Prisma Call Error]', e);
+      // Fallback for unmigrated or temporary DB
+      const fallbackCall = {
+        id: Date.now(),
+        title: `#${Math.floor(100 + Math.random() * 900)} - ${title}`,
+        location,
+        description,
+        assignedUnits: JSON.stringify([])
+      };
+      io.to(`cad_${cadId}`).emit('callUpdated', fallbackCall);
+    }
+  });
+
+  // Assign Officer/Unit to Call
+  socket.on('assignUnitToCall', async (data) => {
+    const { cadId, callId, unitId } = data;
+    try {
+      const existingCall = await prisma.call.findUnique({ where: { id: Number(callId) } });
+      if (existingCall) {
+        let assigned = JSON.parse(existingCall.assignedUnits || '[]');
+        if (!assigned.includes(unitId)) {
+          assigned.push(unitId);
+        }
+        const updated = await prisma.call.update({
+          where: { id: Number(callId) },
+          data: { assignedUnits: JSON.stringify(assigned) }
+        });
+        io.to(`cad_${cadId}`).emit('callUpdated', updated);
+      }
+    } catch (e) {
+      console.error('[Assign Unit Error]', e);
+    }
+  });
+
+  // Handle Unit Status & Emergency Panic Button Triggers
+  socket.on('updateUnitStatus', async (data) => {
+    const { cadId, unitId, status, isPanic } = data;
+
+    // Register active unit in room memory
+    if (!activeCadUnits.has(cadId)) activeCadUnits.set(cadId, new Map());
+    activeCadUnits.get(cadId).set(socket.id, unitId);
+
+    // Broadcast unit status change
+    io.to(`cad_${cadId}`).emit('unitStatusChanged', {
+      unitId,
+      status: isPanic ? '🚨 PANIC / OFFICER IN DISTRESS' : status,
+      isPanic: isPanic || false,
+      timestamp: new Date()
+    });
+
+    // IF PANIC BUTTON PRESSED: Automatically create emergency call & attach ALL active units
+    if (isPanic) {
+      const allActiveUnits = Array.from(activeCadUnits.get(cadId).values());
+      const uniqueUnits = [...new Set(allActiveUnits)];
+
+      try {
+        const callCount = await prisma.call.count({ where: { cadId: Number(cadId) || 0 } });
+        const callNumber = `#${101 + callCount}`;
+
+        const panicCall = await prisma.call.create({
+          data: {
+            cadId: Number(cadId) || 0,
+            title: `🚨 EMERGENCY ${callNumber} - OFFICER PANIC ACTIVATED (${unitId})`,
+            location: 'GPS Emergency Broadcast / Last Known Location',
+            description: `OFFICER DOWN / PANIC BUTTON TRIGGERED BY ${unitId}. ALL ON-DUTY UNITS ATTACHED IMMEDIATELY.`,
+            assignedUnits: JSON.stringify(uniqueUnits)
+          }
+        });
+
+        io.to(`cad_${cadId}`).emit('callUpdated', panicCall);
+      } catch (e) {
+        console.error('[Panic Call Creation Error]', e);
+        // Fallback emergency call broadcast
+        io.to(`cad_${cadId}`).emit('callUpdated', {
+          id: Date.now(),
+          title: `🚨 EMERGENCY #${Math.floor(100 + Math.random() * 900)} - OFFICER PANIC (${unitId})`,
+          location: 'GPS Emergency Broadcast',
+          description: `OFFICER PANIC TRIGGERED BY ${unitId}. ALL UNITS ATTACHED.`,
+          assignedUnits: JSON.stringify(uniqueUnits)
+        });
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.cadId && activeCadUnits.has(socket.cadId)) {
+      activeCadUnits.get(socket.cadId).delete(socket.id);
+    }
+    console.log(`[SOCKET disconnected] ID: ${socket.id}`);
+  });
+});
+
 // ========================================================
 // SERVER STARTUP
 // ========================================================
