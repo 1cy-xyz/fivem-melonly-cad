@@ -1,568 +1,285 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-[#070a12]">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CAD // Next-Gen ER:LC Management System</title>
-  <!-- Tailwind CSS CDN -->
+  <title>ER:LC CAD System</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Socket.io Client -->
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
   <style>
-    /* Glowing Effects & Glassmorphism */
-    .glow-blue {
-      box-shadow: 0 0 25px -3px rgba(14, 165, 233, 0.35), 0 0 10px -2px rgba(56, 189, 248, 0.2);
-    }
-    .glow-blue-sm {
-      box-shadow: 0 0 12px 0px rgba(56, 189, 248, 0.25);
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.8); }
     }
     .glow-rose {
-      box-shadow: 0 0 20px 0px rgba(244, 63, 94, 0.4);
+      animation: pulse-glow 1.5s infinite;
     }
-    .glass-card {
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.4) 100%);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(56, 189, 248, 0.15);
-    }
-    .glass-card-hover:hover {
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 0 20px -3px rgba(14, 165, 233, 0.25);
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #070a12; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
   </style>
 </head>
-<body class="h-full text-slate-100 font-sans flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+<body class="bg-[#050811] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-slate-900">
 
-  <!-- Top Navigation Bar -->
-  <header class="bg-[#0b1120]/90 backdrop-blur-xl border-b border-sky-500/20 px-6 py-3.5 flex justify-between items-center z-30 sticky top-0">
-    <!-- Brand Title -->
-    <div class="flex items-center space-x-4">
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-sky-500/20 bg-[#070a12]/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-sky-400 flex items-center justify-center glow-blue text-slate-950 font-black text-lg">
-          <i data-lucide="shield" class="w-5 h-5 fill-slate-950"></i>
+        <div class="p-2 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400">
+          <i data-lucide="shield"></i>
         </div>
         <div>
-          <h1 class="font-bold text-base tracking-wide bg-gradient-to-r from-white via-sky-200 to-sky-400 bg-clip-text text-transparent" id="cadNameDisplay">AURA CAD</h1>
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse glow-blue-sm"></span>
-            <span class="text-xs text-sky-400/80 font-mono" id="cadRoleDisplay">System Ready</span>
-          </div>
+          <h1 id="cadNameDisplay" class="font-bold text-base text-slate-100 leading-tight">ER:LC CAD Network</h1>
+          <p id="cadRoleDisplay" class="text-xs text-sky-400 font-medium">Disconnected</p>
         </div>
       </div>
-    </div>
 
-    <!-- Center Navigation Tabs -->
-    <nav class="flex p-1 bg-[#0f172a]/80 rounded-xl border border-sky-500/20 text-xs font-semibold space-x-1">
-      <button onclick="switchTab('authTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 bg-sky-500 text-slate-950 font-bold glow-blue-sm">
-        <i data-lucide="link" class="w-3.5 h-3.5"></i><span>Connect</span>
-      </button>
-      <button onclick="switchTab('civTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
-        <i data-lucide="user" class="w-3.5 h-3.5"></i><span>Civilian</span>
-      </button>
-      <button onclick="switchTab('mdtTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
-        <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i><span>Police / MDT</span>
-      </button>
-      <button onclick="switchTab('dispatchTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
-        <i data-lucide="radio" class="w-3.5 h-3.5"></i><span>Dispatch</span>
-      </button>
-      <button onclick="switchTab('ownerTab', this)" class="nav-btn px-4 py-2 rounded-lg transition duration-200 flex items-center space-x-2 text-slate-400 hover:text-sky-300 hover:bg-sky-500/10">
-        <i data-lucide="sliders" class="w-3.5 h-3.5"></i><span>Management</span>
-      </button>
-    </nav>
-
-    <!-- Right Quick Actions / Clock -->
-    <div class="flex items-center space-x-4">
-      <div class="text-right hidden sm:block">
-        <div id="liveClock" class="font-mono text-xs font-bold text-sky-400 tracking-wider">00:00:00 UTC</div>
-        <div class="text-[10px] text-slate-500 font-medium">SERVER LATENCY: <span class="text-emerald-400">12ms</span></div>
-      </div>
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-2 bg-[#0b1120] p-1.5 rounded-xl border border-sky-500/20 text-xs">
+        <button onclick="switchTab('policeTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
+          <i data-lucide="radio" class="w-3.5 h-3.5"></i> Police / Dispatch
+        </button>
+        <button onclick="switchTab('civTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
+          <i data-lucide="user" class="w-3.5 h-3.5"></i> Civilian
+        </button>
+        <button onclick="switchTab('ownerTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
+          <i data-lucide="settings" class="w-3.5 h-3.5"></i> Owner Panel
+        </button>
+      </nav>
     </div>
   </header>
 
-  <!-- Main View Area -->
-  <main class="flex-1 p-6 overflow-y-auto relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-950/20 via-[#070a12] to-[#070a12]">
+  <!-- MAIN CONTENT WRAPPER -->
+  <main class="max-w-7xl mx-auto w-full p-4 flex-1">
 
-    <!-- 1. CONNECT TAB -->
-    <div id="authTab" class="tab-content max-w-4xl mx-auto space-y-6">
-      <div class="text-center space-y-2 py-4">
-        <h2 class="text-3xl font-extrabold text-white tracking-tight">ER:LC CAD & Management Portal</h2>
-        <p class="text-slate-400 text-sm max-w-md mx-auto">Connect to an existing community CAD system or generate a new server network below.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Create Server Card -->
-        <div class="glass-card p-6 rounded-2xl space-y-5 relative overflow-hidden transition-all duration-300 glass-card-hover">
-          <div class="absolute -right-10 -top-10 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl"></div>
-          <div class="flex items-center space-x-3">
-            <div class="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-              <i data-lucide="plus-circle" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h3 class="text-lg font-bold text-white">Initialize Server</h3>
-              <p class="text-xs text-slate-400">Deploy a CAD instance for your ER:LC server</p>
-            </div>
-          </div>
-          <div class="space-y-3.5">
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Community Title</label>
-              <input id="createCadName" type="text" placeholder="e.g. Liberty County Roleplay" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition">
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Custom Access Code</label>
-              <input id="createJoinCode" type="text" placeholder="e.g. LCRP2026" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition">
-            </div>
-            <button onclick="createCAD()" class="w-full bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-slate-950 font-bold py-2.5 rounded-xl transition glow-blue flex items-center justify-center space-x-2">
-              <span>Create Server</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
+    <!-- POLICE / DISPATCH TAB -->
+    <div id="policeTab" class="tab-content space-y-6">
+      <!-- Off-duty Overlay Banner -->
+      <div id="offDutyOverlay" class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <i data-lucide="alert-triangle" class="text-amber-400 w-6 h-6"></i>
+          <div>
+            <h2 class="font-bold text-amber-200 text-sm">Currently Off-Duty</h2>
+            <p class="text-xs text-amber-300/80">Go on duty to transmit status, handle emergency calls, and receive dispatch alerts.</p>
           </div>
         </div>
-
-        <!-- Join Server Card -->
-        <div class="glass-card p-6 rounded-2xl space-y-5 relative overflow-hidden transition-all duration-300 glass-card-hover">
-          <div class="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
-          <div class="flex items-center space-x-3">
-            <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              <i data-lucide="log-in" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h3 class="text-lg font-bold text-white">Join CAD Network</h3>
-              <p class="text-xs text-slate-400">Connect using an authorized server code</p>
-            </div>
-          </div>
-          <div class="space-y-3.5">
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Access Passcode</label>
-              <input id="joinCodeInput" type="text" placeholder="Enter Join Code" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition">
-            </div>
-            <div class="pt-[22px]">
-              <button onclick="joinCAD()" class="w-full bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:border-sky-400 font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
-                <span>Connect CAD</span>
-                <i data-lucide="shield-check" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. CIVILIAN PORTAL TAB -->
-    <div id="civTab" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-2xl font-bold text-white tracking-wide">Civilian Management Hub</h2>
-          <p class="text-xs text-slate-400">Register identities, manage vehicles, and dispatch emergency calls.</p>
-        </div>
-        <div class="flex space-x-3">
-          <button onclick="toggleModal('createCallModal', true)" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 glow-rose">
-            <i data-lucide="phone-call" class="w-4 h-4"></i><span>Emergency 911</span>
-          </button>
-          <button onclick="toggleModal('createCivModal', true)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 glow-blue">
-            <i data-lucide="user-plus" class="w-4 h-4"></i><span>New Person</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="civilianList">
-        <div id="noCivsPlaceholder" class="col-span-full glass-card p-12 rounded-2xl border border-sky-500/10 text-slate-400 text-center space-y-3">
-          <i data-lucide="users" class="w-10 h-10 mx-auto text-sky-500/40"></i>
-          <p class="text-sm font-medium">No Civilian Persons Registered Yet.</p>
-          <p class="text-xs text-slate-500">Click "+ New Person" above to create your first roleplay identity.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. LEO / MDT PORTAL TAB -->
-    <div id="mdtTab" class="tab-content hidden relative h-full max-w-7xl mx-auto space-y-6">
-      
-      <!-- Blurred Off-Duty Overlay -->
-      <div id="offDutyOverlay" class="absolute inset-0 bg-[#070a12]/90 backdrop-blur-xl z-20 flex flex-col items-center justify-center space-y-5 rounded-2xl border border-sky-500/20 min-h-[400px]">
-        <div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 glow-blue">
-          <i data-lucide="shield-alert" class="w-12 h-12"></i>
-        </div>
-        <div class="text-center space-y-1">
-          <h2 class="text-2xl font-bold text-white tracking-wide">Mobile Data Terminal Locked</h2>
-          <p class="text-slate-400 text-xs">Authenticate unit status to gain access to criminal databases and live calls.</p>
-        </div>
-        <button onclick="toggleModal('onDutyModal', true)" class="bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 text-sm font-bold px-8 py-3 rounded-xl shadow-lg transition transform hover:scale-105 glow-blue flex items-center space-x-2">
-          <i data-lucide="radio" class="w-4 h-4"></i><span>Sign On Duty</span>
+        <button onclick="toggleModal('onDutyModal', true)" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2">
+          <i data-lucide="power" class="w-4 h-4"></i> Go On-Duty
         </button>
       </div>
 
+      <!-- Officer Quick Controls Bar -->
+      <div class="bg-[#0b1120] border border-sky-500/20 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4 text-xs">
+          <div>
+            <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Officer</span>
+            <span id="activeOfficerName" class="font-bold text-slate-200">Unset</span>
+          </div>
+          <div class="border-r border-sky-500/20 h-8"></div>
+          <div>
+            <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Callsign</span>
+            <span id="activeCallsign" class="font-mono font-bold text-sky-400">---</span>
+          </div>
+          <div class="border-r border-sky-500/20 h-8"></div>
+          <div>
+            <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Vehicle</span>
+            <span id="activeVehicle" class="font-bold text-slate-200">None</span>
+          </div>
+        </div>
+
+        <!-- Status & Actions -->
+        <div class="flex items-center gap-2">
+          <select id="unitStatusSelect" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="10-8 | Available">10-8 | Available</option>
+            <option value="10-6 | Busy">10-6 | Busy</option>
+            <option value="10-97 | Arrived Scene">10-97 | Arrived Scene</option>
+            <option value="10-15 | In Custody">10-15 | In Custody</option>
+            <option value="10-7 | Off-Duty">10-7 | Out of Service</option>
+          </select>
+          <button onclick="updateStatus()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition">
+            Update Status
+          </button>
+          <button onclick="triggerPanic()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-rose-900/40">
+            <i data-lucide="siren" class="w-4 h-4"></i> PANIC
+          </button>
+          <button onclick="goOffDuty()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs px-3 py-2 rounded-xl transition">
+            Off-Duty
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Dispatch Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- MDT Database Search Card -->
-        <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-4">
-          <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
-            <i data-lucide="search" class="w-4 h-4"></i><span>Police National Computer Query</span>
-          </h3>
-          <div class="flex space-x-2">
-            <input id="mdtSearchInput" type="text" placeholder="Search Civilian Name..." class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
-            <button onclick="searchMDT()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 px-5 py-2.5 rounded-xl text-xs font-bold transition glow-blue">Search</button>
+        <!-- Active Calls Section -->
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+              <i data-lucide="phone-incoming" class="w-4 h-4 text-sky-400"></i> Active CAD Calls
+            </h2>
           </div>
-          <div id="mdtSearchResults" class="space-y-3 pt-2">
-            <div class="text-xs text-slate-500 italic p-4 text-center border border-dashed border-sky-500/10 rounded-xl">Execute a name search to retrieve civilian profiles and licenses.</div>
-          </div>
-        </div>
-
-        <!-- Unit Telemetry & Status Control Panel -->
-        <div class="glass-card p-6 rounded-2xl space-y-5">
-          <div class="flex justify-between items-center">
-            <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
-              <i data-lucide="cpu" class="w-4 h-4"></i><span>Unit Status Control</span>
-            </h3>
-            <button onclick="goOffDuty()" class="text-[10px] text-rose-400 hover:underline">Go Off Duty</button>
-          </div>
-          
-          <div class="bg-[#0b1120] p-4 rounded-xl border border-sky-500/10 space-y-2 text-xs">
-            <div class="flex justify-between"><span class="text-slate-400">Officer:</span> <span id="activeOfficerName" class="font-bold text-white">--</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Callsign:</span> <span id="activeCallsign" class="font-mono text-sky-400 font-bold">--</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">Patrol Unit:</span> <span id="activeVehicle" class="text-slate-300">--</span></div>
-          </div>
-
-          <div class="space-y-2">
-            <label class="block text-[10px] font-bold uppercase text-slate-400">Select Status Code</label>
-            <select id="unitStatusSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
-              <option value="10-8 Available">Green | Available / Patrol</option>
-              <option value="10-6 Busy">Amber | Busy / Traffic Stop</option>
-              <option value="10-97 On Scene">Red | Arrived on Scene</option>
-              <option value="10-7 Out of Service">Grey | Out of Service</option>
-            </select>
-          </div>
-
-          <button onclick="updateStatus()" class="w-full bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold py-2 rounded-xl text-xs transition">
-            Transmit Status Update
-          </button>
-
-          <button onclick="triggerPanic()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition glow-rose animate-pulse flex items-center justify-center space-x-2">
-            <i data-lucide="siren" class="w-5 h-5"></i><span>OFFICER PANIC BUTTON</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. LIVE DISPATCH TAB -->
-    <div id="dispatchTab" class="tab-content hidden space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h2 class="text-2xl font-bold text-white tracking-wide">Emergency Communications Center</h2>
-        <p class="text-xs text-slate-400">Manage 911 emergency calls and active patrol units in real time.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Active 911 Queue -->
-        <div class="glass-card p-6 rounded-2xl space-y-4">
-          <h3 class="font-bold text-rose-400 text-sm tracking-wider uppercase flex items-center space-x-2">
-            <i data-lucide="phone-incoming" class="w-4 h-4"></i><span>Active 911 Emergency Calls</span>
-          </h3>
           <div id="activeCallsContainer" class="space-y-3">
-            <div class="text-xs text-slate-500 italic p-4 text-center">No active calls in dispatch queue.</div>
+            <div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">
+              No active 911 calls or emergencies reported.
+            </div>
           </div>
         </div>
 
-        <!-- On-Duty Unit Roster -->
-        <div class="glass-card p-6 rounded-2xl space-y-4">
-          <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
-            <i data-lucide="users" class="w-4 h-4"></i><span>Active Duty Units</span>
-          </h3>
+        <!-- Active Units List -->
+        <div class="space-y-3">
+          <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-sky-400"></i> Active On-Duty Units
+          </h2>
           <div id="activeUnitsContainer" class="space-y-2">
-            <div class="text-xs text-slate-500 italic p-4 text-center">No patrol units registered on duty.</div>
+            <div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">
+              No active units online.
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 5. OWNER / MANAGEMENT TAB -->
-    <div id="ownerTab" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
-      <div class="glass-card p-6 rounded-2xl space-y-6">
-        <div>
-          <h2 class="text-2xl font-bold text-white">Server Configuration Panel</h2>
-          <p class="text-xs text-slate-400">Customize available patrol callsigns, vehicles, and server integrations.</p>
+    <!-- CIVILIAN TAB -->
+    <div id="civTab" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Join Community -->
+        <div class="bg-[#0b1120] border border-sky-500/20 p-5 rounded-2xl space-y-4">
+          <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+            <i data-lucide="link" class="w-4 h-4 text-sky-400"></i> Connect to CAD
+          </h2>
+          <div class="space-y-2">
+            <label class="text-xs text-slate-400 block">CAD Join Code</label>
+            <input type="text" id="joinCodeInput" placeholder="e.g. ERLC-99" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          </div>
+          <button onclick="joinCAD()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl transition">
+            Connect
+          </button>
         </div>
 
-        <div class="space-y-4">
-          <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Assignable Callsigns (One per line)</label>
-            <textarea id="customCallsigns" rows="3" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400"></textarea>
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Deployable Vehicles (One per line)</label>
-            <textarea id="customVehicles" rows="4" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400"></textarea>
-          </div>
+        <!-- Create 911 Call -->
+        <div class="bg-[#0b1120] border border-sky-500/20 p-5 rounded-2xl space-y-4">
+          <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+            <i data-lucide="phone-call" class="w-4 h-4 text-rose-400"></i> Civilian 911 Emergency Services
+          </h2>
+          <p class="text-xs text-slate-400">Create an active call for police, medical, or fire assistance.</p>
+          <button onclick="toggleModal('createCallModal', true)" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-2.5 rounded-xl transition">
+            Submit 911 Call
+          </button>
         </div>
+      </div>
+    </div>
 
-        <button onclick="saveOwnerSettings()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs transition glow-blue flex items-center space-x-2">
-          <i data-lucide="save" class="w-4 h-4"></i><span>Save Settings</span>
-        </button>
+    <!-- OWNER TAB -->
+    <div id="ownerTab" class="tab-content hidden space-y-6">
+      <div class="max-w-xl mx-auto bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-4">
+        <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-sky-400"></i> Create New CAD Network
+        </h2>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Community Name</label>
+            <input type="text" id="createCadName" placeholder="Liberty County Roleplay" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Custom Join Code</label>
+            <input type="text" id="createJoinCode" placeholder="LCRP-1" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          </div>
+          <button onclick="createCAD()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl transition">
+            Create & Launch CAD
+          </button>
+        </div>
       </div>
     </div>
 
   </main>
 
-  <!-- MODAL: CREATE CIVILIAN PERSONA -->
-  <div id="createCivModal" class="fixed inset-0 bg-[#070a12]/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="glass-card border border-sky-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 relative glow-blue">
-      <h3 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i data-lucide="user-plus" class="text-sky-400 w-5 h-5"></i><span>Create Civilian Identity</span>
-      </h3>
-      
+  <!-- MODALS -->
+
+  <!-- On-Duty Setup Modal -->
+  <div id="onDutyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0b1120] border border-sky-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base">Unit Registration (On-Duty)</h3>
       <div class="space-y-3">
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Full Name</label>
-          <input id="civFullName" type="text" placeholder="John Doe" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
+          <label class="text-xs text-slate-400 block mb-1">Roleplay Name</label>
+          <input type="text" id="officerNameInput" placeholder="Officer J. Doe" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Date of Birth</label>
-            <input id="civDob" type="date" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Gender</label>
-            <select id="civGender" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200">
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-        </div>
-
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Occupation</label>
-          <input id="civOccupation" type="text" placeholder="e.g. Mechanic" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
+          <label class="text-xs text-slate-400 block mb-1">Callsign</label>
+          <input type="text" id="callsignInput" placeholder="1A-12" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Driver License</label>
-            <select id="civDriverLicense" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200">
-              <option value="Valid">Valid</option>
-              <option value="Suspended">Suspended</option>
-              <option value="Revoked">Revoked</option>
-              <option value="None">None</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Firearm License</label>
-            <select id="civFirearmLicense" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200">
-              <option value="None">None</option>
-              <option value="CCW Permit">CCW Permit</option>
-              <option value="Open Carry">Open Carry</option>
-            </select>
-          </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Assigned Vehicle</label>
+          <select id="vehicleSelect" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="Vapid Police Cruiser">Vapid Police Cruiser</option>
+            <option value="Unmarked SUV">Unmarked SUV</option>
+            <option value="Police Interceptor">Police Interceptor</option>
+            <option value="Motorcycle Unit">Motorcycle Unit</option>
+          </select>
         </div>
       </div>
-
-      <div class="flex space-x-3 pt-3">
-        <button onclick="toggleModal('createCivModal', false)" class="flex-1 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700">Cancel</button>
-        <button onclick="submitCivPersona()" class="flex-1 bg-sky-500 text-slate-950 py-2.5 rounded-xl text-xs font-bold hover:bg-sky-400 glow-blue">Register</button>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="toggleModal('onDutyModal', false)" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800 transition">Cancel</button>
+        <button onclick="confirmOnDuty()" class="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition">Confirm On-Duty</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: GO ON DUTY -->
-  <div id="onDutyModal" class="fixed inset-0 bg-[#070a12]/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="glass-card border border-sky-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 relative glow-blue">
-      <h3 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i data-lucide="radio" class="text-sky-400 w-5 h-5"></i><span>Unit On-Duty Authentication</span>
+  <!-- Create 911 Call Modal -->
+  <div id="createCallModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0b1120] border border-rose-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+      <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+        <i data-lucide="phone" class="w-4 h-4 text-rose-400"></i> Submit 911 Emergency Report
       </h3>
-      
       <div class="space-y-3">
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Officer Name</label>
-          <input id="onDutyRpName" type="text" placeholder="Officer J. Doe" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
+          <label class="text-xs text-slate-400 block mb-1">Incident Title / Nature</label>
+          <input type="text" id="callTitle" placeholder="Armed Robbery / Shots Fired" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Select Callsign</label>
-          <select id="onDutyCallsignSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200"></select>
+          <label class="text-xs text-slate-400 block mb-1">Location</label>
+          <input type="text" id="callLocation" placeholder="Bank of Liberty, Main St" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Select Patrol Vehicle</label>
-          <select id="onDutyVehicleSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200"></select>
+          <label class="text-xs text-slate-400 block mb-1">Description / Suspect Details</label>
+          <textarea id="callDescription" rows="3" placeholder="Two suspects fled west in a black sedan..." class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
         </div>
       </div>
-
-      <div class="flex space-x-3 pt-3">
-        <button onclick="toggleModal('onDutyModal', false)" class="flex-1 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700">Cancel</button>
-        <button onclick="confirmOnDuty()" class="flex-1 bg-sky-500 text-slate-950 py-2.5 rounded-xl text-xs font-bold hover:bg-sky-400 glow-blue">Authenticate</button>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="toggleModal('createCallModal', false)" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800 transition">Cancel</button>
+        <button onclick="submit911Call()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition">Dispatch Emergency Call</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: 911 EMERGENCY CALL -->
-  <div id="createCallModal" class="fixed inset-0 bg-[#070a12]/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="glass-card border border-rose-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 relative glow-rose">
-      <h3 class="text-lg font-bold text-rose-400 flex items-center space-x-2">
-        <i data-lucide="phone-call" class="w-5 h-5"></i><span>Dispatch 999 Emergency</span>
-      </h3>
-      
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Call Title</label>
-          <input id="callTitle" type="text" placeholder="Armed Robbery in Progress" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Location</label>
-          <input id="callLocation" type="text" placeholder="Bank of Liberty" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500">
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Situation Details</label>
-          <textarea id="callDescription" rows="3" placeholder="Provide details..." class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
-        </div>
-      </div>
-
-      <div class="flex space-x-3 pt-3">
-        <button onclick="toggleModal('createCallModal', false)" class="flex-1 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700">Cancel</button>
-        <button onclick="submit911Call()" class="flex-1 bg-rose-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-rose-500 glow-rose">Transmit 999</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- SCRIPT SECTION -->
   <script>
-    // Initialize Socket Connection safely
-    let socket = null;
-    try {
-      if (typeof io !== 'undefined') {
-        socket = io();
-      }
-    } catch(e) {
-      console.warn("Socket.io standalone mode");
-    }
-
+    // Global State
+    let socket;
     let currentCadId = null;
     let isOnDuty = false;
-    let registeredCivs = [];
+    let activeUnitsList = [];
 
-    // Live Clock Feature
-    setInterval(() => {
-      const now = new Date();
-      document.getElementById('liveClock').innerText = now.toUTCString().split(' ')[4] + ' UTC';
-    }, 1000);
+    // Initialize Socket connection
+    if (typeof io !== 'undefined') {
+      socket = io();
+    }
 
-    function switchTab(tabId, btnTarget) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      const activeTab = document.getElementById(tabId);
-      if (activeTab) activeTab.classList.remove('hidden');
-
-      // Update active nav state
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-sky-500', 'text-slate-950', 'font-bold', 'glow-blue-sm');
-        btn.classList.add('text-slate-400');
-      });
-
-      if (btnTarget) {
-        btnTarget.classList.add('bg-sky-500', 'text-slate-950', 'font-bold', 'glow-blue-sm');
-        btnTarget.classList.remove('text-slate-400');
-      }
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
     }
 
     function toggleModal(modalId, show) {
       const modal = document.getElementById(modalId);
-      if (!modal) return;
-      if (show) {
-        if (modalId === 'onDutyModal') populateOnDutyDropdowns();
-        modal.classList.remove('hidden');
-      } else {
-        modal.classList.add('hidden');
-      }
-    }
-
-    function submitCivPersona() {
-      const name = document.getElementById('civFullName').value;
-      const dob = document.getElementById('civDob').value;
-      const gender = document.getElementById('civGender').value;
-      const job = document.getElementById('civOccupation').value || 'Unemployed';
-      const driverLic = document.getElementById('civDriverLicense').value;
-      const gunLic = document.getElementById('civFirearmLicense').value;
-
-      if (!name || !dob) return alert('Enter full name and date of birth');
-
-      const civ = { id: Date.now(), name, dob, gender, job, driverLic, gunLic };
-      registeredCivs.push(civ);
-
-      renderCivilians();
-      toggleModal('createCivModal', false);
-
-      document.getElementById('civFullName').value = '';
-      document.getElementById('civDob').value = '';
-    }
-
-    function renderCivilians() {
-      const container = document.getElementById('civilianList');
-      if (registeredCivs.length === 0) {
-        container.innerHTML = `<div id="noCivsPlaceholder" class="col-span-full glass-card p-12 rounded-2xl border border-sky-500/10 text-slate-400 text-center space-y-3"><i data-lucide="users" class="w-10 h-10 mx-auto text-sky-500/40"></i><p class="text-sm font-medium">No Civilian Personas Registered Yet.</p></div>`;
-        lucide.createIcons();
-        return;
-      }
-
-      container.innerHTML = registeredCivs.map(c => `
-        <div class="glass-card p-5 rounded-2xl space-y-3 relative glow-blue-sm glass-card-hover">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="font-bold text-base text-white">${c.name}</h3>
-              <p class="text-[11px] text-slate-400">DOB: ${c.dob} | ${c.gender}</p>
-            </div>
-            <span class="text-[10px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-2.5 py-1 rounded-lg font-mono">${c.job}</span>
-          </div>
-
-          <div class="pt-3 border-t border-sky-500/10 flex space-x-2 text-[10px]">
-            <span class="px-2.5 py-1 rounded-lg font-bold ${c.driverLic === 'Valid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
-              Driver: ${c.driverLic}
-            </span>
-            <span class="px-2.5 py-1 rounded-lg font-bold ${c.gunLic !== 'None' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' : 'bg-slate-800 text-slate-500'}">
-              Firearm: ${c.gunLic}
-            </span>
-          </div>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
-    function searchMDT() {
-      const query = document.getElementById('mdtSearchInput').value.toLowerCase();
-      const resultsDiv = document.getElementById('mdtSearchResults');
-
-      if (!query) return alert('Enter subject name');
-
-      const found = registeredCivs.filter(c => c.name.toLowerCase().includes(query));
-
-      if (found.length === 0) {
-        resultsDiv.innerHTML = `<div class="p-4 bg-[#0b1120] rounded-xl border border-rose-500/20 text-rose-400">No records found matching "${query}".</div>`;
-        return;
-      }
-
-      resultsDiv.innerHTML = found.map(c => `
-        <div class="p-4 bg-[#0b1120] rounded-xl border border-sky-500/20 space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-white text-sm">${c.name}</span>
-            <span class="text-xs text-slate-400">DOB: ${c.dob}</span>
-          </div>
-          <div class="text-xs space-y-1 text-slate-300">
-            <div><strong class="text-slate-400">Occupation:</strong> ${c.job}</div>
-            <div><strong class="text-slate-400">Driver License Status:</strong> <span class="${c.driverLic === 'Valid' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${c.driverLic}</span></div>
-            <div><strong class="text-slate-400">Firearm Permit:</strong> <span class="text-sky-400 font-bold">${c.gunLic}</span></div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function populateOnDutyDropdowns() {
-      const callsigns = document.getElementById('customCallsigns').value.split('\n').filter(Boolean);
-      const vehicles = document.getElementById('customVehicles').value.split('\n').filter(Boolean);
-
-      document.getElementById('onDutyCallsignSelect').innerHTML = callsigns.map(cs => `<option value="${cs}">${cs}</option>`).join('');
-      document.getElementById('onDutyVehicleSelect').innerHTML = vehicles.map(v => `<option value="${v}">${v}</option>`).join('');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
     }
 
     function confirmOnDuty() {
-      const name = document.getElementById('onDutyRpName').value;
-      const callsign = document.getElementById('onDutyCallsignSelect').value;
-      const vehicle = document.getElementById('onDutyVehicleSelect').value;
+      const name = document.getElementById('officerNameInput').value;
+      const callsign = document.getElementById('callsignInput').value;
+      const vehicle = document.getElementById('vehicleSelect').value;
 
       if (!name) return alert('Enter roleplay name');
 
@@ -574,80 +291,87 @@
       document.getElementById('offDutyOverlay').classList.add('hidden');
       toggleModal('onDutyModal', false);
 
-      let activeUnitsList = [];
-
       if (socket) {
-            // Listen for unit updates
-            socket.on('unitStatusChanged', (data) => {
-              if (data.isPanic) {
-                alert('🚨 EMERGENCY PANIC ACTIVATED BY UNIT: ' + data.unitId);
-              }
-      
-              if (!activeUnitsList.includes(data.unitId)) {
-                activeUnitsList.push(data.unitId);
-              }
-      
-              const container = document.getElementById('activeUnitsContainer');
-              const unitEl = document.createElement('div');
-              unitEl.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
-              unitEl.innerHTML = `
-                <span class="font-bold ${data.isPanic ? 'text-rose-400 animate-pulse' : 'text-slate-200'}">${data.unitId}</span>
-                <span class="px-2.5 py-0.5 rounded-lg ${data.isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} font-bold border">${data.status}</span>
-              `;
-              container.prepend(unitEl);
-            });
-      
-            // Listen for call updates / panic call creation
-            socket.on('callUpdated', (call) => {
-              const container = document.getElementById('activeCallsContainer');
-              const assignedUnits = typeof call.assignedUnits === 'string' ? JSON.parse(call.assignedUnits || '[]') : (call.assignedUnits || []);
-              
-              const isPanic = call.title.includes('PANIC') || call.title.includes('🚨');
-              const existingEl = document.getElementById(`call-${call.id}`);
-      
-              const cardContent = `
-                <div class="flex justify-between font-bold ${isPanic ? 'text-rose-400' : 'text-sky-400'} text-xs">
-                  <span>${call.title}</span>
-                  <span class="text-[10px] ${isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} px-2 py-0.5 rounded border">
-                    ${isPanic ? 'PRIORITY 1 EMERGENCY' : 'ACTIVE'}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-300"><strong>Location:</strong> ${call.location}</p>
-                <p class="text-[11px] text-slate-400">${call.description || ''}</p>
-                
-                <!-- Assigned Units Section -->
-                <div class="pt-2 border-t border-sky-500/10 flex flex-wrap items-center gap-1.5 text-[10px]">
-                  <span class="text-slate-400 font-bold">Attached Units:</span>
-                  ${assignedUnits.length > 0 
-                    ? assignedUnits.map(u => `<span class="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono border border-sky-500/30">${u}</span>`).join('') 
-                    : '<span class="text-slate-500 italic">None Attached</span>'}
-                </div>
-      
-                <!-- Dispatch Quick Assign Action -->
-                <div class="pt-2 flex items-center space-x-2">
-                  <select id="assign-select-${call.id}" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-lg p-1.5 text-slate-200 flex-1 focus:outline-none">
-                    <option value="">-- Assign On-Duty Unit --</option>
-                    ${activeUnitsList.map(u => `<option value="${u}">${u}</option>`).join('')}
-                  </select>
-                  <button onclick="assignUnit('${call.id}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition">
-                    Attach
-                  </button>
-                </div>
-              `;
-      
-              if (existingEl) {
-                existingEl.innerHTML = cardContent;
-              } else {
-                const callEl = document.createElement('div');
-                callEl.id = `call-${call.id}`;
-                callEl.className = `p-3.5 bg-[#0b1120] rounded-xl border ${isPanic ? 'border-rose-500/50 bg-rose-950/10 glow-rose' : 'border-sky-500/20'} space-y-2`;
-                callEl.innerHTML = cardContent;
-                container.prepend(callEl);
-              }
-            });
+        socket.off('unitStatusChanged');
+        socket.off('callUpdated');
+
+        socket.on('unitStatusChanged', (data) => {
+          if (data.isPanic) {
+            alert('🚨 EMERGENCY PANIC ACTIVATED BY UNIT: ' + data.unitId);
           }
 
-    // Function to attach selected unit to a call from Dispatch UI
+          if (!activeUnitsList.includes(data.unitId)) {
+            activeUnitsList.push(data.unitId);
+          }
+
+          const container = document.getElementById('activeUnitsContainer');
+          const existingUnit = document.getElementById(`unit-${data.unitId}`);
+
+          const unitHTML = `
+            <span class="font-bold ${data.isPanic ? 'text-rose-400 animate-pulse' : 'text-slate-200'}">${data.unitId}</span>
+            <span class="px-2.5 py-0.5 rounded-lg ${data.isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} font-bold border">${data.status}</span>
+          `;
+
+          if (existingUnit) {
+            existingUnit.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
+            existingUnit.innerHTML = unitHTML;
+          } else {
+            const unitEl = document.createElement('div');
+            unitEl.id = `unit-${data.unitId}`;
+            unitEl.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
+            unitEl.innerHTML = unitHTML;
+            container.prepend(unitEl);
+          }
+        });
+
+        socket.on('callUpdated', (call) => {
+          const container = document.getElementById('activeCallsContainer');
+          const assignedUnits = typeof call.assignedUnits === 'string' ? JSON.parse(call.assignedUnits || '[]') : (call.assignedUnits || []);
+          
+          const isPanic = call.title.includes('PANIC') || call.title.includes('🚨');
+          const existingEl = document.getElementById(`call-${call.id}`);
+
+          const cardContent = `
+            <div class="flex justify-between font-bold ${isPanic ? 'text-rose-400' : 'text-sky-400'} text-xs">
+              <span>${call.title}</span>
+              <span class="text-[10px] ${isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} px-2 py-0.5 rounded border">
+                ${isPanic ? 'PRIORITY 1 EMERGENCY' : 'ACTIVE'}
+              </span>
+            </div>
+            <p class="text-xs text-slate-300"><strong>Location:</strong> ${call.location}</p>
+            <p class="text-[11px] text-slate-400">${call.description || ''}</p>
+            
+            <div class="pt-2 border-t border-sky-500/10 flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span class="text-slate-400 font-bold">Attached Units:</span>
+              ${assignedUnits.length > 0 
+                ? assignedUnits.map(u => `<span class="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono border border-sky-500/30">${u}</span>`).join('') 
+                : '<span class="text-slate-500 italic">None Attached</span>'}
+            </div>
+
+            <div class="pt-2 flex items-center space-x-2">
+              <select id="assign-select-${call.id}" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-lg p-1.5 text-slate-200 flex-1 focus:outline-none">
+                <option value="">-- Assign On-Duty Unit --</option>
+                ${activeUnitsList.map(u => `<option value="${u}">${u}</option>`).join('')}
+              </select>
+              <button onclick="assignUnit('${call.id}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition">
+                Attach
+              </button>
+            </div>
+          `;
+
+          if (existingEl) {
+            existingEl.innerHTML = cardContent;
+          } else {
+            const callEl = document.createElement('div');
+            callEl.id = `call-${call.id}`;
+            callEl.className = `p-3.5 bg-[#0b1120] rounded-xl border ${isPanic ? 'border-rose-500/50 bg-rose-950/10 glow-rose' : 'border-sky-500/20'} space-y-2`;
+            callEl.innerHTML = cardContent;
+            container.prepend(callEl);
+          }
+        });
+      }
+    }
+
     function assignUnit(callId) {
       const select = document.getElementById(`assign-select-${callId}`);
       const unitId = select ? select.value : null;
@@ -702,25 +426,6 @@
       switchTab('civTab');
     }
 
-    if (socket) {
-      socket.on('unitStatusChanged', (data) => {
-        if (data.isPanic) alert('🚨 EMERGENCY PANIC ACTIVATED BY UNIT: ' + data.unitId);
-        const container = document.getElementById('activeUnitsContainer');
-        const unitEl = document.createElement('div');
-        unitEl.className = "flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border border-sky-500/20 text-xs";
-        unitEl.innerHTML = `<span class="font-bold text-slate-200">${data.unitId}</span><span class="px-2.5 py-0.5 rounded-lg bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20">${data.status}</span>`;
-        container.prepend(unitEl);
-      });
-
-      socket.on('callUpdated', (call) => {
-        const container = document.getElementById('activeCallsContainer');
-        const callEl = document.createElement('div');
-        callEl.className = "p-3.5 bg-[#0b1120] rounded-xl border border-rose-500/20 space-y-1";
-        callEl.innerHTML = `<div class="flex justify-between font-bold text-rose-400 text-xs"><span>${call.title}</span><span class="text-[10px] bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">ACTIVE</span></div><p class="text-xs text-slate-300">Location: ${call.location}</p><p class="text-[11px] text-slate-400">${call.description || ''}</p>`;
-        container.prepend(callEl);
-      });
-    }
-
     function updateStatus() {
       const status = document.getElementById('unitStatusSelect').value;
       const unitId = document.getElementById('activeCallsign').innerText;
@@ -732,12 +437,10 @@
       if (socket) socket.emit('updateUnitStatus', { cadId: currentCadId, unitId, status: 'PANIC ALERT', isPanic: true });
     }
 
-    function saveOwnerSettings() {
-      alert('Configuration updated successfully!');
-    }
-
-    // Initialize Lucide icons
-    lucide.createIcons();
+    // Initialize Lucide icons on DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
   </script>
 </body>
 </html>
