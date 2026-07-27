@@ -16,7 +16,6 @@
       50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.8); }
     }
     .glow-rose { animation: pulse-glow 1.5s infinite; }
-    /* Custom scrollbar for clean dark CAD UI */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #070a12; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
@@ -29,23 +28,38 @@
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
   <!-- ==================== HOME / CAD SELECTION VIEW ==================== -->
-  <div id="homeView" class="min-h-screen flex flex-col justify-center items-center p-4">
-    <div class="max-w-2xl w-full space-y-8 text-center">
+  <div id="homeView" class="min-h-screen flex flex-col justify-center items-center p-4 py-12">
+    <div class="max-w-4xl w-full space-y-8 text-center">
       <div class="space-y-2">
         <div class="inline-flex p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-sky-400 mb-2">
           <i data-lucide="shield" class="w-10 h-10"></i>
         </div>
         <h1 class="text-3xl font-extrabold text-slate-100 tracking-tight">Metropolitan Force CAD Terminal</h1>
-        <p class="text-sm text-slate-400">Select or launch a Metropolitan Police Force Management System room.</p>
+        <p class="text-sm text-slate-400">Select, launch, or re-enter your Metropolitan Police Force Management rooms.</p>
       </div>
 
+      <!-- MY SAVED CAD SERVERS (AUTO-LOGIN DASHBOARD) -->
+      <div class="bg-[#0b1120] border border-sky-500/30 p-6 rounded-2xl text-left space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-sky-500/10 pb-3">
+          <div class="flex items-center gap-2 text-sky-400 font-bold text-sm">
+            <i data-lucide="bookmark" class="w-4 h-4"></i> My Active CAD Servers (Auto-Access)
+          </div>
+          <span class="text-[10px] bg-sky-500/10 text-sky-300 font-mono px-2 py-0.5 rounded-full border border-sky-500/20">Permanent Credentials</span>
+        </div>
+        
+        <div id="savedCadsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Populated dynamically via localStorage -->
+        </div>
+      </div>
+
+      <!-- JOIN / CREATE GRID -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
         <!-- Join Existing CAD Card -->
         <div class="bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-4 shadow-xl">
           <div class="flex items-center gap-2 text-sky-400 font-bold text-sm">
-            <i data-lucide="log-in" class="w-4 h-4"></i> Access CAD Room
+            <i data-lucide="log-in" class="w-4 h-4"></i> Access New CAD Room
           </div>
-          <p class="text-xs text-slate-400">Connect using your community CAD code.</p>
+          <p class="text-xs text-slate-400">Connect using a new community CAD code.</p>
           <div class="space-y-3">
             <div>
               <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">CAD Join Code</label>
@@ -61,7 +75,7 @@
             </div>
           </div>
           <button onclick="joinCADFromHome()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition">
-            Request Entry
+            Request / Save Entry
           </button>
         </div>
 
@@ -143,7 +157,7 @@
             <i data-lucide="settings" class="w-3.5 h-3.5"></i> Met Control (Admin)
           </button>
           <button onclick="exitCAD()" class="px-3 py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg transition font-medium flex items-center gap-1.5">
-            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit Terminal
           </button>
         </nav>
       </div>
@@ -553,7 +567,6 @@
 
   <!-- SCRIPT SECTION -->
   <script>
-    // Global Application State & Persistent Store Engine
     let socket;
     let currentCadId = null;
     let currentUser = { badgeNum: '', rpName: '', role: 'Civ 1', isWhitelisted: false };
@@ -566,16 +579,96 @@
       whitelistEnabled: true,
       callsigns: ['1A-01', '1A-12', '2-UNMARKED', 'TPU-04'],
       vehicles: ['Vapid Police Cruiser', 'Unmarked SUV', 'Police Interceptor', 'Armed Response Vehicle'],
-      members: [], // { badgeNum, rpName, role, isWhitelisted }
-      calls: [],   // { id, title, location, description, assignedUnits: [], comments: [] }
-      units: [],   // { unitId, status, isPanic, officerName, vehicle }
-      civilians: [], // { name, dob, driverLicense, firearmLicense }
-      vehiclesDb: [] // { plate, model, color, status }
+      members: [], 
+      calls: [],   
+      units: [],   
+      civilians: [], 
+      vehiclesDb: [] 
     };
 
-    // Socket Initialization
     if (typeof io !== 'undefined') {
       socket = io();
+    }
+
+    // ==================== SAVED CAD SERVERS & PERMANENT AUTO-LOGIN ENGINE ====================
+    function getSavedCadsRegistry() {
+      const stored = localStorage.getItem('saved_cads_registry');
+      return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveCadToRegistry(cadId, forceName, badgeNum, rpName, isOwnerFlag = false) {
+      let saved = getSavedCadsRegistry();
+      const existingIdx = saved.findIndex(s => s.cadId === cadId);
+      const entry = { cadId, forceName, badgeNum, rpName, isOwner: isOwnerFlag, lastAccessed: Date.now() };
+      
+      if (existingIdx >= 0) saved[existingIdx] = entry;
+      else saved.push(entry);
+
+      localStorage.setItem('saved_cads_registry', JSON.stringify(saved));
+      renderSavedCadsDashboard();
+    }
+
+    function removeCadFromRegistry(cadId) {
+      let saved = getSavedCadsRegistry().filter(s => s.cadId !== cadId);
+      localStorage.setItem('saved_cads_registry', JSON.stringify(saved));
+      renderSavedCadsDashboard();
+      showNotification('Server Removed', `Removed ${cadId} from your saved CAD dashboard.`, 'info');
+    }
+
+    function renderSavedCadsDashboard() {
+      const container = document.getElementById('savedCadsList');
+      if (!container) return;
+
+      const saved = getSavedCadsRegistry();
+      if (saved.length === 0) {
+        container.innerHTML = `<div class="col-span-2 p-6 border border-dashed border-sky-500/20 rounded-xl text-center text-xs text-slate-500">No saved CAD servers found. Join or create a CAD below to gain permanent access.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      saved.forEach(item => {
+        container.innerHTML += `
+          <div class="bg-[#070a12] border border-sky-500/20 p-3.5 rounded-xl flex items-center justify-between text-xs hover:border-sky-500/50 transition">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2 font-bold text-slate-200">
+                <span>${item.forceName || item.cadId}</span>
+                <span class="font-mono text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">${item.cadId}</span>
+              </div>
+              <div class="text-[11px] text-slate-400">
+                User: <span class="text-slate-200 font-medium">${item.rpName}</span> (${item.badgeNum})
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="autoLoginToCad('${item.cadId}', '${item.badgeNum}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] px-3 py-1.5 rounded-lg transition">
+                Quick Connect
+              </button>
+              <button onclick="removeCadFromRegistry('${item.cadId}')" class="text-slate-500 hover:text-rose-400 font-bold px-1 text-sm">×</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function autoLoginToCad(cadId, badgeNum) {
+      currentCadId = cadId;
+      loadCadState();
+
+      let member = cadState.members.find(m => m.badgeNum === badgeNum);
+      if (!member) {
+        return showNotification('Error', 'User profile not found in server state.', 'warning');
+      }
+
+      currentUser = member;
+      isOwner = (member.badgeNum === '#OWNER');
+
+      if (cadState.whitelistEnabled && !member.isWhitelisted) {
+        document.getElementById('homeView').classList.add('hidden');
+        document.getElementById('pendingUserLabel').innerText = `${member.rpName} (${member.badgeNum})`;
+        document.getElementById('pendingWhitelistView').classList.remove('hidden');
+        return;
+      }
+
+      launchMainCAD(`Force CAD (${currentCadId})`, member.role + ' | Permanent Session');
     }
 
     // Local Storage Persistence Engine
@@ -621,13 +714,8 @@
       container.appendChild(toast);
       lucide.createIcons();
 
-      setTimeout(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      }, 10);
-
-      setTimeout(() => {
-        if (toast.parentNode) toast.remove();
-      }, 7000);
+      setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 7000);
     }
 
     // Navigation and UI Switches
@@ -655,7 +743,6 @@
       currentCadId = joinCode;
       loadCadState();
 
-      // Check if member already exists in state
       let member = cadState.members.find(m => m.badgeNum === badgeNum);
       if (!member) {
         member = { badgeNum, rpName, role: 'Civ 1', isWhitelisted: !cadState.whitelistEnabled };
@@ -666,6 +753,9 @@
       currentUser = member;
       isOwner = false;
 
+      // Save credentials permanently to dashboard
+      saveCadToRegistry(currentCadId, `Force CAD (${currentCadId})`, member.badgeNum, member.rpName, false);
+
       if (cadState.whitelistEnabled && !member.isWhitelisted) {
         document.getElementById('homeView').classList.add('hidden');
         document.getElementById('pendingUserLabel').innerText = `${member.rpName} (${member.badgeNum})`;
@@ -674,7 +764,7 @@
         return;
       }
 
-      launchMainCAD(`Force CAD (${currentCadId})`, 'Connected');
+      launchMainCAD(`Force CAD (${currentCadId})`, member.role);
     }
 
     function createCADFromHome() {
@@ -694,6 +784,9 @@
       }
       isOwner = true;
       saveCadState();
+
+      // Save owner credentials permanently
+      saveCadToRegistry(currentCadId, name, currentUser.badgeNum, currentUser.rpName, true);
 
       launchMainCAD(name, 'Met Control Admin | ' + currentCadId);
     }
@@ -751,11 +844,12 @@
       document.getElementById('mainCadView').classList.add('hidden');
       document.getElementById('pendingWhitelistView').classList.add('hidden');
       document.getElementById('homeView').classList.remove('hidden');
+
+      renderSavedCadsDashboard();
     }
 
     // Met Control Administration & Role Whitelisting
     function renderMetControlSettings() {
-      // Render Whitelist Setting Button
       const wlBtn = document.getElementById('whitelistToggleBtn');
       if (cadState.whitelistEnabled) {
         wlBtn.innerText = 'Whitelist: ENABLED';
@@ -765,7 +859,6 @@
         wlBtn.className = 'bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs px-4 py-2 rounded-xl transition';
       }
 
-      // Pending Applications
       const pendingContainer = document.getElementById('pendingAppsContainer');
       const pendingMembers = cadState.members.filter(m => !m.isWhitelisted);
       pendingContainer.innerHTML = '';
@@ -788,7 +881,6 @@
         });
       }
 
-      // Member Roles List
       const rolesContainer = document.getElementById('membersRoleContainer');
       rolesContainer.innerHTML = '';
       cadState.members.filter(m => m.isWhitelisted).forEach(m => {
@@ -812,7 +904,6 @@
         `;
       });
 
-      // Render Callsigns and Vehicles
       const csContainer = document.getElementById('callsignListDisplay');
       const csModalSelect = document.getElementById('callsignSelectModal');
       csContainer.innerHTML = ''; csModalSelect.innerHTML = '';
@@ -957,7 +1048,6 @@
       document.getElementById('policeActiveState').classList.remove('hidden');
       toggleModal('onDutyModal', false);
 
-      // Register unit state
       let unit = cadState.units.find(u => u.unitId === callsign);
       if (unit) {
         unit.status = '10-8 | Available'; unit.isPanic = false; unit.officerName = name; unit.vehicle = vehicle;
@@ -1027,7 +1117,6 @@
       if (!call.assignedUnits.includes(unitId)) {
         call.assignedUnits.push(unitId);
         
-        // Auto Set En-Route (10-97)
         let unit = cadState.units.find(u => u.unitId === unitId);
         if (unit) {
           unit.status = '10-97 | En-Route';
@@ -1049,7 +1138,6 @@
       showNotification('Call Deleted', 'CAD incident resolved and removed.', 'info');
     }
 
-    // Call Rendering Logic
     function renderActiveCalls() {
       const container = document.getElementById('activeCallsContainer');
       if (!container) return;
@@ -1140,7 +1228,6 @@
             </div>
             <p class="text-slate-300 text-[11px]">${call.description || 'No description provided.'}</p>
             
-            <!-- Comment Section -->
             <div class="pt-2 border-t border-sky-500/10 space-y-2">
               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Officer Remarks</span>
               <div class="space-y-1 max-h-24 overflow-y-auto">
@@ -1279,6 +1366,7 @@
     // DOM Ready Initialization
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      renderSavedCadsDashboard();
     });
   </script>
 </body>
