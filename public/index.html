@@ -165,7 +165,7 @@
             <i data-lucide="phone-call" class="w-4 h-4"></i><span>Emergency 911</span>
           </button>
           <button onclick="toggleModal('createCivModal', true)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 glow-blue">
-            <i data-lucide="user-plus" class="w-4 h-4"></i><span>New Persona</span>
+            <i data-lucide="user-plus" class="w-4 h-4"></i><span>New Person</span>
           </button>
         </div>
       </div>
@@ -173,7 +173,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="civilianList">
         <div id="noCivsPlaceholder" class="col-span-full glass-card p-12 rounded-2xl border border-sky-500/10 text-slate-400 text-center space-y-3">
           <i data-lucide="users" class="w-10 h-10 mx-auto text-sky-500/40"></i>
-          <p class="text-sm font-medium">No Civilian Personas Registered Yet.</p>
+          <p class="text-sm font-medium">No Civilian Persons Registered Yet.</p>
           <p class="text-xs text-slate-500">Click "+ New Persona" above to create your first roleplay identity.</p>
         </div>
       </div>
@@ -200,7 +200,7 @@
         <!-- MDT Database Search Card -->
         <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-4">
           <h3 class="font-bold text-sky-400 text-sm tracking-wider uppercase flex items-center space-x-2">
-            <i data-lucide="search" class="w-4 h-4"></i><span>NCIC Database Query</span>
+            <i data-lucide="search" class="w-4 h-4"></i><span>Police National Computer Query</span>
           </h3>
           <div class="flex space-x-2">
             <input id="mdtSearchInput" type="text" placeholder="Search Civilian Name..." class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
@@ -229,10 +229,10 @@
           <div class="space-y-2">
             <label class="block text-[10px] font-bold uppercase text-slate-400">Select Status Code</label>
             <select id="unitStatusSelect" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-400">
-              <option value="10-8 Available">10-8 | Available / Patrol</option>
-              <option value="10-6 Busy">10-6 | Busy / Traffic Stop</option>
-              <option value="10-97 On Scene">10-97 | Arrived on Scene</option>
-              <option value="10-7 Out of Service">10-7 | Out of Service</option>
+              <option value="10-8 Available">Green | Available / Patrol</option>
+              <option value="10-6 Busy">Amber | Busy / Traffic Stop</option>
+              <option value="10-97 On Scene">Red | Arrived on Scene</option>
+              <option value="10-7 Out of Service">Grey | Out of Service</option>
             </select>
           </div>
 
@@ -287,22 +287,15 @@
 
         <div class="space-y-4">
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Available Callsigns (One per line)</label>
-            <textarea id="customCallsigns" rows="3" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400">1-LINCOLN-18
-2-ADAM-10
-A-11 (LCSO)
-A-22 (LCSO)</textarea>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Assignable Callsigns (One per line)</label>
+            <textarea id="customCallsigns" rows="3" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400">AW-101
+            AW-102</textarea>
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">In-Game ER:LC Vehicles List (One per line)</label>
-            <textarea id="customVehicles" rows="4" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400">2021 Bullhorn Prancer Police Cruiser
-Falcon Advance Police SUV
-Chevillon Thrax Interceptor
-Bravado Buffalo Police Cruiser
-LCSO Bearcat Armored Vehicle
-SAFR Fire Engine
-SAFR Ambulance</textarea>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Deployable Vehicles (One per line)</label>
+            <textarea id="customVehicles" rows="4" class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-400">Example Vehicle
+            Example Vehicle</textarea>
           </div>
         </div>
 
