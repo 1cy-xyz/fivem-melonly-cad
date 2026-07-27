@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ER:LC Advanced CAD Network</title>
+  <title>Metropolitan CAD System</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -15,12 +15,18 @@
       0%, 100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
       50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.8); }
     }
-    .glow-rose {
-      animation: pulse-glow 1.5s infinite;
-    }
+    .glow-rose { animation: pulse-glow 1.5s infinite; }
+    /* Custom scrollbar for clean dark CAD UI */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #070a12; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
   </style>
 </head>
-<body class="bg-[#050811] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-slate-900">
+<body class="bg-[#050811] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-slate-900 relative overflow-x-hidden">
+
+  <!-- ==================== TOAST NOTIFICATION CONTAINER (BOTTOM RIGHT) ==================== -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
   <!-- ==================== HOME / CAD SELECTION VIEW ==================== -->
   <div id="homeView" class="min-h-screen flex flex-col justify-center items-center p-4">
@@ -29,51 +35,78 @@
         <div class="inline-flex p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-sky-400 mb-2">
           <i data-lucide="shield" class="w-10 h-10"></i>
         </div>
-        <h1 class="text-3xl font-extrabold text-slate-100 tracking-tight">Emergency Response CAD System</h1>
-        <p class="text-sm text-slate-400">Select an existing CAD network to join or create a new community server.</p>
+        <h1 class="text-3xl font-extrabold text-slate-100 tracking-tight">Metropolitan Force CAD Terminal</h1>
+        <p class="text-sm text-slate-400">Select or launch a Metropolitan Police Force Management System room.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
         <!-- Join Existing CAD Card -->
         <div class="bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-4 shadow-xl">
           <div class="flex items-center gap-2 text-sky-400 font-bold text-sm">
-            <i data-lucide="log-in" class="w-4 h-4"></i> Join CAD Network
+            <i data-lucide="log-in" class="w-4 h-4"></i> Access CAD Room
           </div>
-          <p class="text-xs text-slate-400">Enter a Join Code provided by your community owner to connect.</p>
-          <div class="space-y-2">
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">CAD Join Code</label>
-            <input type="text" id="homeJoinCodeInput" placeholder="e.g. MET-CONTROL" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono uppercase">
+          <p class="text-xs text-slate-400">Connect using your community CAD code.</p>
+          <div class="space-y-3">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">CAD Join Code</label>
+              <input type="text" id="homeJoinCodeInput" placeholder="e.g. MET-CAD" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono uppercase">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Badge / Collar No.</label>
+              <input type="text" id="homeBadgeNumInput" placeholder="e.g. #402" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Roleplay Name</label>
+              <input type="text" id="homeRpNameInput" placeholder="Officer J. Miller" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            </div>
           </div>
           <button onclick="joinCADFromHome()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition">
-            Connect to Server
+            Request Entry
           </button>
         </div>
 
         <!-- Create New CAD Card -->
         <div class="bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-4 shadow-xl">
           <div class="flex items-center gap-2 text-sky-400 font-bold text-sm">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> Create New CAD
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Force CAD
           </div>
-          <p class="text-xs text-slate-400">Launch a new server network and manage Met Control settings.</p>
-          <div class="space-y-2">
+          <p class="text-xs text-slate-400">Initialize a new CAD system with full Met Control & Whitelisting.</p>
+          <div class="space-y-3">
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Community Name</label>
-              <input type="text" id="homeCreateNameInput" placeholder="Metropolitan Police RP" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Force Name</label>
+              <input type="text" id="homeCreateNameInput" placeholder="Metropolitan Police Force" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
             </div>
             <div>
-              <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Custom Join Code</label>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Custom Join Code</label>
               <input type="text" id="homeCreateCodeInput" placeholder="MET-1" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono uppercase">
             </div>
           </div>
           <button onclick="createCADFromHome()" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 font-bold text-xs py-3 rounded-xl transition">
-            Create & Launch
+            Create & Initialize
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MAIN CAD APP VIEW (HIDDEN INITIALLY) ==================== -->
+  <!-- ==================== PENDING WHITELIST GATE VIEW ==================== -->
+  <div id="pendingWhitelistView" class="hidden min-h-screen flex flex-col justify-center items-center p-4">
+    <div class="bg-[#0b1120] border border-amber-500/30 p-8 rounded-2xl max-w-md w-full text-center space-y-4 shadow-2xl">
+      <div class="inline-flex p-4 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-400">
+        <i data-lucide="clock" class="w-8 h-8 animate-spin"></i>
+      </div>
+      <h2 class="text-xl font-bold text-slate-100">Pending Whitelist Approval</h2>
+      <p class="text-xs text-slate-400">Your join request for <span id="pendingUserLabel" class="font-bold text-slate-200"></span> has been submitted to Met Control. Please wait for an Owner or Admin to approve your access.</p>
+      <div class="p-3 bg-[#070a12] rounded-xl border border-sky-500/10 text-xs font-mono text-amber-300">
+        Status: Awaiting Approval
+      </div>
+      <button onclick="exitCAD()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2.5 rounded-xl transition">
+        Return to Main Menu
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN CAD APP TERMINAL ==================== -->
   <div id="mainCadView" class="hidden flex-col min-h-screen">
 
     <!-- TOP NAVIGATION BAR -->
@@ -84,24 +117,33 @@
             <i data-lucide="shield"></i>
           </div>
           <div>
-            <h1 id="cadNameDisplay" class="font-bold text-base text-slate-100 leading-tight">ER:LC CAD Network</h1>
-            <p id="cadRoleDisplay" class="text-xs text-sky-400 font-medium">Connected</p>
+            <h1 id="cadNameDisplay" class="font-bold text-base text-slate-100 leading-tight">Metropolitan Force CAD</h1>
+            <div class="flex items-center gap-2">
+              <span id="cadRoleDisplay" class="text-xs text-sky-400 font-medium">Connected</span>
+              <span id="userRoleBadge" class="text-[10px] bg-sky-500/10 border border-sky-500/30 text-sky-300 font-mono px-2 py-0.5 rounded-full">Civ 1</span>
+            </div>
           </div>
         </div>
 
         <!-- Navigation Tabs -->
-        <nav class="flex items-center gap-2 bg-[#0b1120] p-1.5 rounded-xl border border-sky-500/20 text-xs">
+        <nav class="flex items-center gap-1.5 bg-[#0b1120] p-1.5 rounded-xl border border-sky-500/20 text-xs">
           <button onclick="switchTab('policeTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
-            <i data-lucide="radio" class="w-3.5 h-3.5"></i> Police / Dispatch
+            <i data-lucide="radio" class="w-3.5 h-3.5"></i> Dispatch & Units
+          </button>
+          <button onclick="switchTab('callsTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
+            <i data-lucide="phone-call" class="w-3.5 h-3.5"></i> CAD Calls
+          </button>
+          <button onclick="switchTab('pncTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i> PNC Search
           </button>
           <button onclick="switchTab('civTab')" class="px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
             <i data-lucide="user" class="w-3.5 h-3.5"></i> Civilian Suite
           </button>
           <button id="ownerTabButton" onclick="switchTab('ownerTab')" class="hidden px-3 py-1.5 rounded-lg hover:bg-sky-500/10 hover:text-sky-400 transition font-medium flex items-center gap-1.5">
-            <i data-lucide="settings" class="w-3.5 h-3.5"></i> Met Control (Owner)
+            <i data-lucide="settings" class="w-3.5 h-3.5"></i> Met Control (Admin)
           </button>
           <button onclick="exitCAD()" class="px-3 py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg transition font-medium flex items-center gap-1.5">
-            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit CAD
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit
           </button>
         </nav>
       </div>
@@ -110,7 +152,7 @@
     <!-- MAIN CONTENT WRAPPER -->
     <main class="max-w-7xl mx-auto w-full p-4 flex-1">
 
-      <!-- POLICE / DISPATCH TAB -->
+      <!-- ==================== POLICE / DISPATCH TAB ==================== -->
       <div id="policeTab" class="tab-content space-y-6">
         
         <!-- LOCKED / OFF-DUTY FULL PAGE GATE -->
@@ -118,8 +160,8 @@
           <div class="inline-flex p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400">
             <i data-lucide="lock" class="w-8 h-8"></i>
           </div>
-          <h2 class="text-xl font-bold text-slate-100">Police & Dispatch Portal Locked</h2>
-          <p class="text-xs text-slate-400">You are currently <strong>Off-Duty</strong>. To view active emergency calls, unit positions, and access dispatch controls, register on-duty below.</p>
+          <h2 class="text-xl font-bold text-slate-100">Dispatch Terminal Locked</h2>
+          <p class="text-xs text-slate-400">You are off-duty. Register on-duty to broadcast unit status and view live dispatches.</p>
           <button onclick="openOnDutyModal()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-6 py-3 rounded-xl transition inline-flex items-center gap-2">
             <i data-lucide="power" class="w-4 h-4"></i> Go On-Duty
           </button>
@@ -127,11 +169,19 @@
 
         <!-- UNLOCKED POLICE TERMINAL CONTAINER -->
         <div id="policeActiveState" class="hidden space-y-6">
+          
+          <!-- Met Control Offline Warning Banner -->
+          <div id="metControlOfflineBanner" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-300">
+            <span class="flex items-center gap-2 font-medium">
+              <i data-lucide="alert-circle" class="w-4 h-4"></i> Met Control Dispatch is currently <strong>OFFLINE</strong>. Self-dispatch mode active.
+            </span>
+          </div>
+
           <!-- Active Officer Control Header -->
           <div class="bg-[#0b1120] border border-sky-500/20 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-4 text-xs">
               <div>
-                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Officer</span>
+                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Officer / Badge</span>
                 <span id="activeOfficerName" class="font-bold text-slate-200">Unset</span>
               </div>
               <div class="border-r border-sky-500/20 h-8"></div>
@@ -147,16 +197,28 @@
             </div>
 
             <!-- Status & Actions -->
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              
+              <!-- Met Control Exclusive Toggle -->
+              <div id="metControlToggleBox" class="hidden items-center border-r border-sky-500/20 pr-3 mr-1">
+                <button id="toggleMetControlBtn" onclick="toggleMetControlOnline()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                  <i data-lucide="radio" class="w-4 h-4"></i> Toggle Met Control Off
+                </button>
+              </div>
+
+              <!-- Status Selector -->
               <select id="unitStatusSelect" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-sky-500">
                 <option value="10-8 | Available">10-8 | Available</option>
                 <option value="10-6 | Busy">10-6 | Busy</option>
-                <option value="10-97 | Arrived Scene">10-97 | Arrived Scene</option>
+                <option value="10-97 | En-Route">10-97 | En-Route</option>
+                <option value="10-23 | On Scene">10-23 | On Scene</option>
                 <option value="10-15 | In Custody">10-15 | In Custody</option>
-                <option value="10-7 | Off-Duty">10-7 | Out of Service</option>
               </select>
               <button onclick="updateStatus()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition">
                 Update Status
+              </button>
+              <button onclick="setSelfOnScene()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3 py-2 rounded-xl transition">
+                Set On Scene
               </button>
               <button onclick="triggerPanic()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-rose-900/40">
                 <i data-lucide="siren" class="w-4 h-4"></i> PANIC
@@ -173,12 +235,16 @@
             <div class="lg:col-span-2 space-y-3">
               <div class="flex items-center justify-between">
                 <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-                  <i data-lucide="phone-incoming" class="w-4 h-4 text-sky-400"></i> Active CAD Calls
+                  <i data-lucide="phone-incoming" class="w-4 h-4 text-sky-400"></i> Active CAD Incidents
                 </h2>
+                <!-- Met Control Wipe Calls Button -->
+                <button id="metControlWipeCallsBtn" onclick="wipeCurrentCalls()" class="hidden bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-1 rounded-lg transition items-center gap-1">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Wipe Active Calls
+                </button>
               </div>
               <div id="activeCallsContainer" class="space-y-3">
                 <div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">
-                  No active 911 calls or emergencies reported.
+                  No active emergency calls or incidents reported.
                 </div>
               </div>
             </div>
@@ -186,7 +252,7 @@
             <!-- Active Units List -->
             <div class="space-y-3">
               <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-                <i data-lucide="users" class="w-4 h-4 text-sky-400"></i> Active On-Duty Units
+                <i data-lucide="users" class="w-4 h-4 text-sky-400"></i> Active Units
               </h2>
               <div id="activeUnitsContainer" class="space-y-2">
                 <div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">
@@ -199,26 +265,82 @@
 
       </div>
 
-      <!-- CIVILIAN SUITE TAB -->
+      <!-- ==================== NEW CAD CALLS & COMMENTS TAB ==================== -->
+      <div id="callsTab" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+              <i data-lucide="list" class="w-5 h-5 text-sky-400"></i> Active Incident Log & Officer Comments
+            </h2>
+            <p class="text-xs text-slate-400">Public incident hub for on-duty units to attach remarks and log call updates.</p>
+          </div>
+        </div>
+        <div id="publicCallsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Calls dynamically populated -->
+        </div>
+      </div>
+
+      <!-- ==================== PNC SEARCH TAB ==================== -->
+      <div id="pncTab" class="tab-content hidden space-y-6">
+        <div class="bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-6">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-400">
+              <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-base text-slate-100">Police National Computer (PNC)</h2>
+              <p class="text-xs text-slate-400">Search civilian identity records and vehicle registrations.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Person Search -->
+            <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="user-search" class="w-4 h-4 text-sky-400"></i> Identity Search
+              </h3>
+              <input type="text" id="pncNameSearch" placeholder="Enter Full Name..." class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+              <button onclick="searchPNCName()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-2 rounded-xl transition">
+                Search Identity Database
+              </button>
+              <div id="pncNameResult" class="pt-2 text-xs space-y-2"></div>
+            </div>
+
+            <!-- Vehicle Search -->
+            <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="car" class="w-4 h-4 text-sky-400"></i> Vehicle Plate Search
+              </h3>
+              <input type="text" id="pncPlateSearch" placeholder="Enter License Plate..." class="w-full bg-[#0b1120] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 uppercase font-mono">
+              <button onclick="searchPNCPlate()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-2 rounded-xl transition">
+                Search Vehicle Registry
+              </button>
+              <div id="pncPlateResult" class="pt-2 text-xs space-y-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== CIVILIAN SUITE TAB ==================== -->
       <div id="civTab" class="tab-content hidden space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           <!-- Civilian Persona Creation -->
           <div class="bg-[#0b1120] border border-sky-500/20 p-5 rounded-2xl space-y-4">
             <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-              <i data-lucide="id-card" class="w-4 h-4 text-sky-400"></i> Civilian Identity
+              <i data-lucide="id-card" class="w-4 h-4 text-sky-400"></i> Civilian Identity Registration
             </h2>
             <div class="space-y-3">
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Name</label>
-                <input type="text" id="civNameInput" placeholder="John Doe" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Name</label>
+                <input type="text" id="civNameInput" placeholder="John Miller" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date of Birth</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date of Birth</label>
                 <input type="date" id="civDobInput" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Driver License</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Driver License</label>
                 <select id="civDriverLicense" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
                   <option value="Valid">Valid</option>
                   <option value="Suspended">Suspended</option>
@@ -227,7 +349,7 @@
                 </select>
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Firearm License</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Firearm License</label>
                 <select id="civFirearmLicense" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
                   <option value="None">None</option>
                   <option value="Concealed Carry">Concealed Carry</option>
@@ -235,7 +357,7 @@
                 </select>
               </div>
               <button onclick="saveCivilianProfile()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl transition">
-                Save Civilian Record
+                Save Civilian Profile
               </button>
             </div>
           </div>
@@ -247,19 +369,19 @@
             </h2>
             <div class="space-y-3">
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">License Plate</label>
-                <input type="text" id="vehPlateInput" placeholder="ABC-1234" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 uppercase font-mono">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">License Plate</label>
+                <input type="text" id="vehPlateInput" placeholder="MET-1029" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 uppercase font-mono">
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Vehicle Make & Model</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Vehicle Model</label>
                 <input type="text" id="vehModelInput" placeholder="Vapid Scout" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Color</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Color</label>
                 <input type="text" id="vehColorInput" placeholder="Black" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
               </div>
               <div>
-                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Registration Status</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Registration Status</label>
                 <select id="vehRegStatus" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
                   <option value="Valid">Valid</option>
                   <option value="Expired">Expired</option>
@@ -277,23 +399,65 @@
             <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">
               <i data-lucide="phone-call" class="w-4 h-4 text-rose-400"></i> Dispatch 911 Call
             </h2>
-            <p class="text-xs text-slate-400">Instantly transmit emergency notifications to dispatch and active officers.</p>
+            <p class="text-xs text-slate-400">Transmit emergency incident notifications directly to police dispatch.</p>
             <button onclick="toggleModal('createCallModal', true)" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center gap-2">
-              <i data-lucide="siren" class="w-4 h-4"></i> Create Emergency Call
+              <i data-lucide="siren" class="w-4 h-4"></i> Create 911 Emergency Call
             </button>
           </div>
 
         </div>
       </div>
 
-      <!-- MET CONTROL / OWNER PANEL TAB -->
+      <!-- ==================== MET CONTROL / OWNER PANEL TAB ==================== -->
       <div id="ownerTab" class="tab-content hidden space-y-6">
         <div class="bg-[#0b1120] border border-sky-500/20 p-6 rounded-2xl space-y-6">
-          <div>
-            <h2 class="font-bold text-base text-slate-200 flex items-center gap-2">
-              <i data-lucide="sliders" class="w-5 h-5 text-sky-400"></i> Met Control - CAD Settings Panel
-            </h2>
-            <p class="text-xs text-slate-400">Configure available vehicle fleets and officer callsign allocations for on-duty units.</p>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="font-bold text-base text-slate-200 flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-5 h-5 text-sky-400"></i> Met Control - Force Administration
+              </h2>
+              <p class="text-xs text-slate-400">Configure CAD settings, Whitelist approvals, and Role assignments.</p>
+            </div>
+
+            <!-- Full CAD Data Reset Button -->
+            <button onclick="clearFullCadData()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg shadow-rose-900/30">
+              <i data-lucide="trash" class="w-4 h-4"></i> Wipe Full CAD Data
+            </button>
+          </div>
+
+          <!-- Whitelist Toggle Setting -->
+          <div class="p-4 bg-[#070a12] border border-sky-500/10 rounded-xl flex items-center justify-between gap-4">
+            <div>
+              <h3 class="font-bold text-xs text-slate-200">Force Whitelist System</h3>
+              <p class="text-[11px] text-slate-400">When enabled, newly joining users must be manually approved by Met Control.</p>
+            </div>
+            <button id="whitelistToggleBtn" onclick="toggleWhitelistSetting()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition">
+              Whitelist: ENABLED
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Pending Whitelist Approval Applications -->
+            <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="user-check" class="w-4 h-4 text-amber-400"></i> Pending Whitelist Applications
+              </h3>
+              <div id="pendingAppsContainer" class="space-y-2">
+                <p class="text-xs text-slate-500 italic">No pending applications.</p>
+              </div>
+            </div>
+
+            <!-- Member Role Assignment Terminal -->
+            <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4 text-sky-400"></i> Member Role Whitelist Manager
+              </h3>
+              <div id="membersRoleContainer" class="space-y-2">
+                <!-- Member items dynamically populated -->
+              </div>
+            </div>
+
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -301,7 +465,7 @@
             <!-- Callsign Availability Controller -->
             <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
               <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="hash" class="w-4 h-4 text-sky-400"></i> Callsign Availability Manager
+                <i data-lucide="hash" class="w-4 h-4 text-sky-400"></i> Callsign Allocation
               </h3>
               <div class="flex gap-2">
                 <input type="text" id="newCallsignInput" placeholder="e.g. 1-ALPHA-01" class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 uppercase font-mono">
@@ -309,25 +473,21 @@
                   Add
                 </button>
               </div>
-              <div id="callsignListDisplay" class="flex flex-wrap gap-1.5 pt-2">
-                <!-- Dynamically populated -->
-              </div>
+              <div id="callsignListDisplay" class="flex flex-wrap gap-1.5 pt-2"></div>
             </div>
 
-            <!-- Vehicle Fleet Availability Controller -->
+            <!-- Vehicle Fleet Controller -->
             <div class="bg-[#070a12] border border-sky-500/10 p-4 rounded-xl space-y-3">
               <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <i data-lucide="shield-alert" class="w-4 h-4 text-sky-400"></i> Fleet Vehicle Manager
+                <i data-lucide="shield-alert" class="w-4 h-4 text-sky-400"></i> Fleet Vehicles
               </h3>
               <div class="flex gap-2">
-                <input type="text" id="newVehicleInput" placeholder="e.g. Tactical Pursuit Unit" class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                <input type="text" id="newVehicleInput" placeholder="e.g. Armed Response Vehicle" class="flex-1 bg-[#0b1120] border border-sky-500/20 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
                 <button onclick="addVehicleSetting()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl transition">
                   Add
                 </button>
               </div>
-              <div id="vehicleListDisplay" class="flex flex-wrap gap-1.5 pt-2">
-                <!-- Dynamically populated -->
-              </div>
+              <div id="vehicleListDisplay" class="flex flex-wrap gap-1.5 pt-2"></div>
             </div>
 
           </div>
@@ -345,20 +505,16 @@
       <h3 class="font-bold text-slate-100 text-base">Unit Registration (Go On-Duty)</h3>
       <div class="space-y-3">
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Roleplay Name</label>
-          <input type="text" id="officerNameInput" placeholder="Officer J. Doe" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Roleplay Officer Name</label>
+          <input type="text" id="officerNameInput" placeholder="Officer J. Miller" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Callsign Selection (Met Control)</label>
-          <select id="callsignSelectModal" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono">
-            <!-- Dynamically populated from met Control settings -->
-          </select>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Callsign Selection</label>
+          <select id="callsignSelectModal" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"></select>
         </div>
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Assigned Fleet Vehicle</label>
-          <select id="vehicleSelectModal" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
-            <!-- Dynamically populated from met Control settings -->
-          </select>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Fleet Vehicle</label>
+          <select id="vehicleSelectModal" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"></select>
         </div>
       </div>
       <div class="flex items-center justify-end gap-2 pt-2">
@@ -376,44 +532,105 @@
       </h3>
       <div class="space-y-3">
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Incident Title / Nature</label>
-          <input type="text" id="callTitle" placeholder="Armed Robbery / Shots Fired" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Incident Title / Nature</label>
+          <input type="text" id="callTitle" placeholder="Armed Robbery in Progress" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Location</label>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Location</label>
           <input type="text" id="callLocation" placeholder="Bank of Liberty, Main St" class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
         </div>
         <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Description / Suspect Details</label>
-          <textarea id="callDescription" rows="3" placeholder="Two suspects fled west in a black sedan..." class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Description / Suspect Details</label>
+          <textarea id="callDescription" rows="3" placeholder="Two armed individuals fled west in a black sedan..." class="w-full bg-[#070a12] border border-sky-500/20 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"></textarea>
         </div>
       </div>
       <div class="flex items-center justify-end gap-2 pt-2">
         <button onclick="toggleModal('createCallModal', false)" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800 transition">Cancel</button>
-        <button onclick="submit911Call()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition">Dispatch Call</button>
+        <button onclick="submit911Call()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition">Dispatch Emergency Call</button>
       </div>
     </div>
   </div>
 
   <!-- SCRIPT SECTION -->
   <script>
-    // Global App State
+    // Global Application State & Persistent Store Engine
     let socket;
     let currentCadId = null;
+    let currentUser = { badgeNum: '', rpName: '', role: 'Civ 1', isWhitelisted: false };
     let isOwner = false;
     let isOnDuty = false;
-    let activeUnitsList = [];
+    let isMetControlOnline = true;
 
-    // Met Control Configurations (Default sets)
-    let metControlCallsigns = ['1A-01', '1A-12', '2-UNMARKED', 'TPU-04'];
-    let metControlVehicles = ['Vapid Police Cruiser', 'Unmarked SUV', 'Police Interceptor', 'Motorcycle Unit'];
+    // Database Models (Persisted in LocalStorage & Synced)
+    let cadState = {
+      whitelistEnabled: true,
+      callsigns: ['1A-01', '1A-12', '2-UNMARKED', 'TPU-04'],
+      vehicles: ['Vapid Police Cruiser', 'Unmarked SUV', 'Police Interceptor', 'Armed Response Vehicle'],
+      members: [], // { badgeNum, rpName, role, isWhitelisted }
+      calls: [],   // { id, title, location, description, assignedUnits: [], comments: [] }
+      units: [],   // { unitId, status, isPanic, officerName, vehicle }
+      civilians: [], // { name, dob, driverLicense, firearmLicense }
+      vehiclesDb: [] // { plate, model, color, status }
+    };
 
-    // Initialize Socket connection
+    // Socket Initialization
     if (typeof io !== 'undefined') {
       socket = io();
     }
 
-    // Dynamic Navigation & Tab Management
+    // Local Storage Persistence Engine
+    function loadCadState() {
+      if (!currentCadId) return;
+      const stored = localStorage.getItem(`cad_state_${currentCadId}`);
+      if (stored) {
+        try { cadState = JSON.parse(stored); } catch (e) { console.error(e); }
+      }
+    }
+
+    function saveCadState() {
+      if (!currentCadId) return;
+      localStorage.setItem(`cad_state_${currentCadId}`, JSON.stringify(cadState));
+      if (socket) socket.emit('syncCadState', { cadId: currentCadId, state: cadState });
+    }
+
+    // Bottom-Right Notification Toast System
+    function showNotification(title, message, type = 'info', targetTab = null) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const borderColors = {
+        info: 'border-sky-500 bg-[#0b1120]',
+        warning: 'border-amber-500 bg-[#0b1120]',
+        danger: 'border-rose-500 bg-[#0b1120]'
+      };
+
+      toast.className = `p-4 border ${borderColors[type] || borderColors.info} rounded-2xl shadow-2xl space-y-1.5 pointer-events-auto transition-all transform duration-300 translate-y-2 opacity-0 flex flex-col`;
+      
+      toast.innerHTML = `
+        <div class="flex items-center justify-between font-bold text-xs text-slate-100">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="${type === 'danger' ? 'siren' : 'bell'}" class="w-4 h-4 text-${type === 'danger' ? 'rose' : 'sky'}-400"></i>
+            ${title}
+          </span>
+          <button onclick="this.closest('.pointer-events-auto').remove()" class="text-slate-400 hover:text-slate-200">×</button>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-snug">${message}</p>
+        ${targetTab ? `<button onclick="switchTab('${targetTab}'); this.closest('.pointer-events-auto').remove()" class="self-end text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg font-bold mt-1">Navigate</button>` : ''}
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+      }, 7000);
+    }
+
+    // Navigation and UI Switches
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
       document.getElementById(tabId).classList.remove('hidden');
@@ -425,43 +642,102 @@
       else modal.classList.add('hidden');
     }
 
-    // Home View CAD Actions
+    // Home / CAD Access Workflow
     function joinCADFromHome() {
-      const joinCode = document.getElementById('homeJoinCodeInput').value.trim();
-      if (!joinCode) return alert('Please enter a CAD Join Code');
+      const joinCode = document.getElementById('homeJoinCodeInput').value.trim().toUpperCase();
+      const badgeNum = document.getElementById('homeBadgeNumInput').value.trim();
+      const rpName = document.getElementById('homeRpNameInput').value.trim();
 
-      currentCadId = joinCode.toUpperCase();
+      if (!joinCode || !badgeNum || !rpName) {
+        return showNotification('Form Incomplete', 'Provide CAD Join Code, Badge No, and RP Name.', 'warning');
+      }
+
+      currentCadId = joinCode;
+      loadCadState();
+
+      // Check if member already exists in state
+      let member = cadState.members.find(m => m.badgeNum === badgeNum);
+      if (!member) {
+        member = { badgeNum, rpName, role: 'Civ 1', isWhitelisted: !cadState.whitelistEnabled };
+        cadState.members.push(member);
+        saveCadState();
+      }
+
+      currentUser = member;
       isOwner = false;
-      launchMainCAD("ER:LC Network (" + currentCadId + ")", "Connected");
+
+      if (cadState.whitelistEnabled && !member.isWhitelisted) {
+        document.getElementById('homeView').classList.add('hidden');
+        document.getElementById('pendingUserLabel').innerText = `${member.rpName} (${member.badgeNum})`;
+        document.getElementById('pendingWhitelistView').classList.remove('hidden');
+        showNotification('Pending Whitelist', 'Your request is awaiting Met Control approval.', 'warning');
+        return;
+      }
+
+      launchMainCAD(`Force CAD (${currentCadId})`, 'Connected');
     }
 
     function createCADFromHome() {
       const name = document.getElementById('homeCreateNameInput').value.trim();
-      const joinCode = document.getElementById('homeCreateCodeInput').value.trim();
-      if (!name || !joinCode) return alert('Fill in all fields to create a CAD server.');
+      const joinCode = document.getElementById('homeCreateCodeInput').value.trim().toUpperCase();
 
-      currentCadId = joinCode.toUpperCase();
+      if (!name || !joinCode) {
+        return showNotification('Error', 'Specify both Force Name and Join Code.', 'warning');
+      }
+
+      currentCadId = joinCode;
+      loadCadState();
+
+      currentUser = { badgeNum: '#OWNER', rpName: 'Met Control Administrator', role: 'Met Control', isWhitelisted: true };
+      if (!cadState.members.some(m => m.badgeNum === '#OWNER')) {
+        cadState.members.push(currentUser);
+      }
       isOwner = true;
-      launchMainCAD(name, 'Owner | ' + currentCadId);
+      saveCadState();
+
+      launchMainCAD(name, 'Met Control Admin | ' + currentCadId);
     }
 
     function launchMainCAD(name, role) {
       document.getElementById('cadNameDisplay').innerText = name;
       document.getElementById('cadRoleDisplay').innerText = role;
+      document.getElementById('userRoleBadge').innerText = currentUser.role;
 
-      if (isOwner) {
+      if (isOwner || currentUser.role === 'Met Control') {
         document.getElementById('ownerTabButton').classList.remove('hidden');
+        document.getElementById('metControlToggleBox').classList.remove('hidden');
+        document.getElementById('metControlToggleBox').classList.add('flex');
+        document.getElementById('metControlWipeCallsBtn').classList.remove('hidden');
+        document.getElementById('metControlWipeCallsBtn').classList.add('flex');
       } else {
         document.getElementById('ownerTabButton').classList.add('hidden');
+        document.getElementById('metControlToggleBox').classList.add('hidden');
+        document.getElementById('metControlWipeCallsBtn').classList.add('hidden');
       }
 
       document.getElementById('homeView').classList.add('hidden');
+      document.getElementById('pendingWhitelistView').classList.add('hidden');
       document.getElementById('mainCadView').classList.remove('hidden');
       document.getElementById('mainCadView').classList.add('flex');
 
       renderMetControlSettings();
+      renderActiveCalls();
+      renderActiveUnits();
+      renderPublicCalls();
 
-      if (socket) socket.emit('joinCadRoom', currentCadId);
+      if (socket) {
+        socket.emit('joinCadRoom', currentCadId);
+        
+        socket.on('syncCadState', (state) => {
+          cadState = state;
+          renderActiveCalls();
+          renderActiveUnits();
+          renderPublicCalls();
+          renderMetControlSettings();
+        });
+      }
+
+      showNotification('Terminal Online', `Connected to CAD room ${currentCadId}`, 'info');
       switchTab('civTab');
     }
 
@@ -472,75 +748,205 @@
 
       document.getElementById('policeActiveState').classList.add('hidden');
       document.getElementById('policeLockedState').classList.remove('hidden');
-
       document.getElementById('mainCadView').classList.add('hidden');
-      document.getElementById('mainCadView').classList.remove('flex');
+      document.getElementById('pendingWhitelistView').classList.add('hidden');
       document.getElementById('homeView').classList.remove('hidden');
     }
 
-    // Met Control Settings Management
+    // Met Control Administration & Role Whitelisting
     function renderMetControlSettings() {
+      // Render Whitelist Setting Button
+      const wlBtn = document.getElementById('whitelistToggleBtn');
+      if (cadState.whitelistEnabled) {
+        wlBtn.innerText = 'Whitelist: ENABLED';
+        wlBtn.className = 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition';
+      } else {
+        wlBtn.innerText = 'Whitelist: DISABLED';
+        wlBtn.className = 'bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs px-4 py-2 rounded-xl transition';
+      }
+
+      // Pending Applications
+      const pendingContainer = document.getElementById('pendingAppsContainer');
+      const pendingMembers = cadState.members.filter(m => !m.isWhitelisted);
+      pendingContainer.innerHTML = '';
+
+      if (pendingMembers.length === 0) {
+        pendingContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No pending applications.</p>';
+      } else {
+        pendingMembers.forEach(m => {
+          pendingContainer.innerHTML += `
+            <div class="flex items-center justify-between bg-[#0b1120] p-2.5 rounded-xl border border-sky-500/20 text-xs">
+              <div>
+                <span class="font-bold text-slate-200">${m.rpName}</span>
+                <span class="font-mono text-sky-400 ml-1">(${m.badgeNum})</span>
+              </div>
+              <button onclick="approveWhitelist('${m.badgeNum}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[10px] px-2.5 py-1 rounded-lg transition">
+                Approve
+              </button>
+            </div>
+          `;
+        });
+      }
+
+      // Member Roles List
+      const rolesContainer = document.getElementById('membersRoleContainer');
+      rolesContainer.innerHTML = '';
+      cadState.members.filter(m => m.isWhitelisted).forEach(m => {
+        rolesContainer.innerHTML += `
+          <div class="flex flex-wrap items-center justify-between bg-[#0b1120] p-2.5 rounded-xl border border-sky-500/20 text-xs gap-2">
+            <div>
+              <span class="font-bold text-slate-200">${m.rpName}</span>
+              <span class="font-mono text-sky-400 text-[10px] block">${m.badgeNum}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <select onchange="updateMemberRole('${m.badgeNum}', this.value)" class="bg-[#070a12] border border-sky-500/20 rounded-lg p-1 text-[11px] text-slate-200">
+                <option value="Civ 1" ${m.role === 'Civ 1' ? 'selected' : ''}>Civ 1</option>
+                <option value="Civ 2" ${m.role === 'Civ 2' ? 'selected' : ''}>Civ 2</option>
+                <option value="Civ 3" ${m.role === 'Civ 3' ? 'selected' : ''}>Civ 3</option>
+                <option value="Met Control" ${m.role === 'Met Control' ? 'selected' : ''}>Met Control</option>
+                <option value="Staff" ${m.role === 'Staff' ? 'selected' : ''}>Staff</option>
+              </select>
+              <button onclick="removeMember('${m.badgeNum}')" class="text-rose-400 hover:text-rose-300 font-bold px-1 text-sm">×</button>
+            </div>
+          </div>
+        `;
+      });
+
+      // Render Callsigns and Vehicles
       const csContainer = document.getElementById('callsignListDisplay');
       const csModalSelect = document.getElementById('callsignSelectModal');
-      csContainer.innerHTML = '';
-      csModalSelect.innerHTML = '';
-
-      metControlCallsigns.forEach(cs => {
+      csContainer.innerHTML = ''; csModalSelect.innerHTML = '';
+      cadState.callsigns.forEach(cs => {
         csContainer.innerHTML += `<span class="bg-sky-500/10 text-sky-400 font-mono text-[11px] px-2 py-0.5 rounded border border-sky-500/20 flex items-center gap-1">${cs} <button onclick="removeCallsign('${cs}')" class="text-rose-400 hover:text-rose-300">×</button></span>`;
         csModalSelect.innerHTML += `<option value="${cs}">${cs}</option>`;
       });
 
       const vehContainer = document.getElementById('vehicleListDisplay');
       const vehModalSelect = document.getElementById('vehicleSelectModal');
-      vehContainer.innerHTML = '';
-      vehModalSelect.innerHTML = '';
-
-      metControlVehicles.forEach(v => {
+      vehContainer.innerHTML = ''; vehModalSelect.innerHTML = '';
+      cadState.vehicles.forEach(v => {
         vehContainer.innerHTML += `<span class="bg-sky-500/10 text-sky-400 text-[11px] px-2 py-0.5 rounded border border-sky-500/20 flex items-center gap-1">${v} <button onclick="removeVehicle('${v}')" class="text-rose-400 hover:text-rose-300">×</button></span>`;
         vehModalSelect.innerHTML += `<option value="${v}">${v}</option>`;
       });
     }
 
+    function toggleWhitelistSetting() {
+      cadState.whitelistEnabled = !cadState.whitelistEnabled;
+      saveCadState();
+      renderMetControlSettings();
+      showNotification('Whitelist Updated', `Whitelist system is now ${cadState.whitelistEnabled ? 'ENABLED' : 'DISABLED'}`, 'info');
+    }
+
+    function approveWhitelist(badgeNum) {
+      const member = cadState.members.find(m => m.badgeNum === badgeNum);
+      if (member) {
+        member.isWhitelisted = true;
+        saveCadState();
+        renderMetControlSettings();
+        showNotification('User Approved', `${member.rpName} has been whitelisted.`, 'info');
+      }
+    }
+
+    function updateMemberRole(badgeNum, newRole) {
+      const member = cadState.members.find(m => m.badgeNum === badgeNum);
+      if (member) {
+        member.role = newRole;
+        saveCadState();
+        showNotification('Role Assigned', `${member.rpName} assigned to ${newRole}`, 'info');
+      }
+    }
+
+    function removeMember(badgeNum) {
+      cadState.members = cadState.members.filter(m => m.badgeNum !== badgeNum);
+      saveCadState();
+      renderMetControlSettings();
+    }
+
     function addCallsignSetting() {
       const val = document.getElementById('newCallsignInput').value.trim().toUpperCase();
-      if (val && !metControlCallsigns.includes(val)) {
-        metControlCallsigns.push(val);
+      if (val && !cadState.callsigns.includes(val)) {
+        cadState.callsigns.push(val);
         document.getElementById('newCallsignInput').value = '';
-        renderMetControlSettings();
+        saveCadState(); renderMetControlSettings();
       }
     }
 
     function removeCallsign(cs) {
-      metControlCallsigns = metControlCallsigns.filter(item => item !== cs);
-      renderMetControlSettings();
+      cadState.callsigns = cadState.callsigns.filter(i => i !== cs);
+      saveCadState(); renderMetControlSettings();
     }
 
     function addVehicleSetting() {
       const val = document.getElementById('newVehicleInput').value.trim();
-      if (val && !metControlVehicles.includes(val)) {
-        metControlVehicles.push(val);
+      if (val && !cadState.vehicles.includes(val)) {
+        cadState.vehicles.push(val);
         document.getElementById('newVehicleInput').value = '';
-        renderMetControlSettings();
+        saveCadState(); renderMetControlSettings();
       }
     }
 
     function removeVehicle(v) {
-      metControlVehicles = metControlVehicles.filter(item => item !== v);
-      renderMetControlSettings();
+      cadState.vehicles = cadState.vehicles.filter(i => i !== v);
+      saveCadState(); renderMetControlSettings();
     }
 
-    // On-Duty Operations
+    function clearFullCadData() {
+      if (confirm("Are you sure you want to completely wipe all CAD data, calls, and member databases?")) {
+        localStorage.removeItem(`cad_state_${currentCadId}`);
+        cadState = {
+          whitelistEnabled: true,
+          callsigns: ['1A-01', '1A-12', '2-UNMARKED', 'TPU-04'],
+          vehicles: ['Vapid Police Cruiser', 'Unmarked SUV', 'Police Interceptor', 'Armed Response Vehicle'],
+          members: [currentUser],
+          calls: [], units: [], civilians: [], vehiclesDb: []
+        };
+        saveCadState();
+        location.reload();
+      }
+    }
+
+    // Met Control Dispatch Functions
+    function toggleMetControlOnline() {
+      isMetControlOnline = !isMetControlOnline;
+      const btn = document.getElementById('toggleMetControlBtn');
+      const banner = document.getElementById('metControlOfflineBanner');
+
+      if (isMetControlOnline) {
+        btn.innerHTML = `<i data-lucide="radio" class="w-4 h-4"></i> Toggle Met Control Off`;
+        btn.className = 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5';
+        banner.classList.add('hidden');
+        showNotification('Met Control Online', 'Met Control dispatch active.', 'info');
+      } else {
+        btn.innerHTML = `<i data-lucide="radio" class="w-4 h-4"></i> Toggle Met Control On`;
+        btn.className = 'bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5';
+        banner.classList.remove('hidden');
+        showNotification('Met Control Offline', 'Dispatch is currently offline.', 'warning');
+      }
+      lucide.createIcons();
+    }
+
+    function wipeCurrentCalls() {
+      if (confirm("Wipe all current active CAD calls?")) {
+        cadState.calls = [];
+        saveCadState();
+        renderActiveCalls();
+        renderPublicCalls();
+        showNotification('Calls Cleared', 'All active CAD calls were wiped by Met Control.', 'info');
+      }
+    }
+
+    // On-Duty & Police Terminal
     function openOnDutyModal() {
       renderMetControlSettings();
       toggleModal('onDutyModal', true);
     }
 
     function confirmOnDuty() {
-      const name = document.getElementById('officerNameInput').value;
+      const name = document.getElementById('officerNameInput').value.trim();
       const callsign = document.getElementById('callsignSelectModal').value;
       const vehicle = document.getElementById('vehicleSelectModal').value;
 
-      if (!name) return alert('Enter roleplay name');
+      if (!name) return showNotification('Required', 'Enter Officer RP Name.', 'warning');
 
       document.getElementById('activeOfficerName').innerText = name;
       document.getElementById('activeCallsign').innerText = callsign;
@@ -551,141 +957,326 @@
       document.getElementById('policeActiveState').classList.remove('hidden');
       toggleModal('onDutyModal', false);
 
-      if (socket) {
-        socket.off('unitStatusChanged');
-        socket.off('callUpdated');
-
-        socket.on('unitStatusChanged', (data) => {
-          if (data.isPanic) {
-            alert('🚨 EMERGENCY PANIC ACTIVATED BY UNIT: ' + data.unitId);
-          }
-
-          if (!activeUnitsList.includes(data.unitId)) {
-            activeUnitsList.push(data.unitId);
-          }
-
-          const container = document.getElementById('activeUnitsContainer');
-          const existingUnit = document.getElementById(`unit-${data.unitId}`);
-
-          const unitHTML = `
-            <span class="font-bold ${data.isPanic ? 'text-rose-400 animate-pulse' : 'text-slate-200'}">${data.unitId}</span>
-            <span class="px-2.5 py-0.5 rounded-lg ${data.isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} font-bold border">${data.status}</span>
-          `;
-
-          if (existingUnit) {
-            existingUnit.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
-            existingUnit.innerHTML = unitHTML;
-          } else {
-            const unitEl = document.createElement('div');
-            unitEl.id = `unit-${data.unitId}`;
-            unitEl.className = `flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${data.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs`;
-            unitEl.innerHTML = unitHTML;
-            container.prepend(unitEl);
-          }
-        });
-
-        socket.on('callUpdated', (call) => {
-          const container = document.getElementById('activeCallsContainer');
-          const assignedUnits = typeof call.assignedUnits === 'string' ? JSON.parse(call.assignedUnits || '[]') : (call.assignedUnits || []);
-          const isPanic = call.title.includes('PANIC') || call.title.includes('🚨');
-          const existingEl = document.getElementById(`call-${call.id}`);
-
-          const cardContent = `
-            <div class="flex justify-between font-bold ${isPanic ? 'text-rose-400' : 'text-sky-400'} text-xs">
-              <span>${call.title}</span>
-              <span class="text-[10px] ${isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} px-2 py-0.5 rounded border">
-                ${isPanic ? 'PRIORITY 1 EMERGENCY' : 'ACTIVE'}
-              </span>
-            </div>
-            <p class="text-xs text-slate-300"><strong>Location:</strong> ${call.location}</p>
-            <p class="text-[11px] text-slate-400">${call.description || ''}</p>
-            
-            <div class="pt-2 border-t border-sky-500/10 flex flex-wrap items-center gap-1.5 text-[10px]">
-              <span class="text-slate-400 font-bold">Attached Units:</span>
-              ${assignedUnits.length > 0 
-                ? assignedUnits.map(u => `<span class="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono border border-sky-500/30">${u}</span>`).join('') 
-                : '<span class="text-slate-500 italic">None Attached</span>'}
-            </div>
-
-            <div class="pt-2 flex items-center space-x-2">
-              <select id="assign-select-${call.id}" class="bg-[#070a12] border border-sky-500/20 text-xs rounded-lg p-1.5 text-slate-200 flex-1 focus:outline-none">
-                <option value="">-- Assign On-Duty Unit --</option>
-                ${activeUnitsList.map(u => `<option value="${u}">${u}</option>`).join('')}
-              </select>
-              <button onclick="assignUnit('${call.id}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition">
-                Attach
-              </button>
-            </div>
-          `;
-
-          if (existingEl) {
-            existingEl.innerHTML = cardContent;
-          } else {
-            const callEl = document.createElement('div');
-            callEl.id = `call-${call.id}`;
-            callEl.className = `p-3.5 bg-[#0b1120] rounded-xl border ${isPanic ? 'border-rose-500/50 bg-rose-950/10 glow-rose' : 'border-sky-500/20'} space-y-2`;
-            callEl.innerHTML = cardContent;
-            container.prepend(callEl);
-          }
-        });
+      // Register unit state
+      let unit = cadState.units.find(u => u.unitId === callsign);
+      if (unit) {
+        unit.status = '10-8 | Available'; unit.isPanic = false; unit.officerName = name; unit.vehicle = vehicle;
+      } else {
+        cadState.units.push({ unitId: callsign, status: '10-8 | Available', isPanic: false, officerName: name, vehicle });
       }
+      saveCadState();
+      renderActiveUnits();
+      showNotification('On-Duty Confirmed', `Unit ${callsign} registered 10-8.`, 'info', 'policeTab');
     }
 
     function goOffDuty() {
+      const callsign = document.getElementById('activeCallsign').innerText;
+      cadState.units = cadState.units.filter(u => u.unitId !== callsign);
+      saveCadState();
       isOnDuty = false;
       document.getElementById('policeActiveState').classList.add('hidden');
       document.getElementById('policeLockedState').classList.remove('hidden');
-    }
-
-    function assignUnit(callId) {
-      const select = document.getElementById(`assign-select-${callId}`);
-      const unitId = select ? select.value : null;
-      if (!unitId) return alert('Select an active unit to assign.');
-
-      if (socket) {
-        socket.emit('assignUnitToCall', { cadId: currentCadId, callId, unitId });
-      }
+      renderActiveUnits();
     }
 
     function updateStatus() {
       const status = document.getElementById('unitStatusSelect').value;
       const unitId = document.getElementById('activeCallsign').innerText;
-      if (socket) socket.emit('updateUnitStatus', { cadId: currentCadId, unitId, status, isPanic: false });
+      let unit = cadState.units.find(u => u.unitId === unitId);
+      if (unit) {
+        unit.status = status;
+        saveCadState();
+        renderActiveUnits();
+        showNotification('Status Updated', `Unit status set to ${status}`, 'info');
+      }
+    }
+
+    function setSelfOnScene() {
+      document.getElementById('unitStatusSelect').value = '10-23 | On Scene';
+      updateStatus();
     }
 
     function triggerPanic() {
       const unitId = document.getElementById('activeCallsign').innerText;
-      if (socket) socket.emit('updateUnitStatus', { cadId: currentCadId, unitId, status: 'PANIC ALERT', isPanic: true });
+      let unit = cadState.units.find(u => u.unitId === unitId);
+      if (unit) {
+        unit.status = '10-99 PANIC ALERT';
+        unit.isPanic = true;
+        saveCadState();
+        renderActiveUnits();
+        showNotification('🚨 PANIC ACTIVATED', `Unit ${unitId} triggered panic button!`, 'danger', 'policeTab');
+      }
     }
 
-    // Civilian Suite Actions
+    function clearUnitPanic(unitId) {
+      let unit = cadState.units.find(u => u.unitId === unitId);
+      if (unit) {
+        unit.isPanic = false;
+        unit.status = '10-8 | Available';
+        saveCadState();
+        renderActiveUnits();
+        showNotification('Panic Cleared', `Panic status cleared for ${unitId}`, 'info');
+      }
+    }
+
+    // Call Dispatch Automation
+    function assignUnitToCall(callId, unitId) {
+      let call = cadState.calls.find(c => c.id === callId);
+      if (!call) return;
+
+      if (!call.assignedUnits.includes(unitId)) {
+        call.assignedUnits.push(unitId);
+        
+        // Auto Set En-Route (10-97)
+        let unit = cadState.units.find(u => u.unitId === unitId);
+        if (unit) {
+          unit.status = '10-97 | En-Route';
+        }
+
+        saveCadState();
+        renderActiveCalls();
+        renderActiveUnits();
+        renderPublicCalls();
+        showNotification('Unit Assigned', `Attached ${unitId} to call: ${call.title} (Auto 10-97 En-Route)`, 'info', 'policeTab');
+      }
+    }
+
+    function deleteCall(callId) {
+      cadState.calls = cadState.calls.filter(c => c.id !== callId);
+      saveCadState();
+      renderActiveCalls();
+      renderPublicCalls();
+      showNotification('Call Deleted', 'CAD incident resolved and removed.', 'info');
+    }
+
+    // Call Rendering Logic
+    function renderActiveCalls() {
+      const container = document.getElementById('activeCallsContainer');
+      if (!container) return;
+
+      if (cadState.calls.length === 0) {
+        container.innerHTML = `<div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">No active calls reported.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      cadState.calls.forEach(call => {
+        const isPanic = call.title.includes('PANIC') || call.title.includes('🚨');
+        container.innerHTML += `
+          <div class="p-3.5 bg-[#0b1120] rounded-xl border ${isPanic ? 'border-rose-500/50 bg-rose-950/10 glow-rose' : 'border-sky-500/20'} space-y-2 text-xs">
+            <div class="flex justify-between font-bold ${isPanic ? 'text-rose-400' : 'text-sky-400'}">
+              <span>${call.title}</span>
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded border border-sky-500/20">ACTIVE</span>
+                ${(isOwner || currentUser.role === 'Met Control') ? `<button onclick="deleteCall('${call.id}')" class="text-rose-400 hover:text-rose-300 font-bold px-1 text-sm">×</button>` : ''}
+              </div>
+            </div>
+            <p class="text-slate-300"><strong>Location:</strong> ${call.location}</p>
+            <p class="text-[11px] text-slate-400">${call.description || ''}</p>
+            
+            <div class="pt-2 border-t border-sky-500/10 flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span class="text-slate-400 font-bold">Attached:</span>
+              ${call.assignedUnits.length > 0 
+                ? call.assignedUnits.map(u => `<span class="bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-md font-mono border border-sky-500/30">${u}</span>`).join('') 
+                : '<span class="text-slate-500 italic">None</span>'}
+            </div>
+
+            <div class="pt-2 flex items-center space-x-2">
+              <select id="assign-select-${call.id}" class="bg-[#070a12] border border-sky-500/20 text-[11px] rounded-lg p-1 text-slate-200 flex-1 focus:outline-none">
+                <option value="">-- Attach Active Unit --</option>
+                ${cadState.units.map(u => `<option value="${u.unitId}">${u.unitId} (${u.officerName})</option>`).join('')}
+              </select>
+              <button onclick="assignUnitToCall('${call.id}', document.getElementById('assign-select-${call.id}').value)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] px-2.5 py-1 rounded-lg transition">
+                Attach Unit
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderActiveUnits() {
+      const container = document.getElementById('activeUnitsContainer');
+      if (!container) return;
+
+      if (cadState.units.length === 0) {
+        container.innerHTML = `<div class="p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">No active units online.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      cadState.units.forEach(u => {
+        container.innerHTML += `
+          <div class="flex justify-between items-center bg-[#0b1120] p-3 rounded-xl border ${u.isPanic ? 'border-rose-500 bg-rose-500/10' : 'border-sky-500/20'} text-xs">
+            <div>
+              <span class="font-bold ${u.isPanic ? 'text-rose-400 animate-pulse' : 'text-slate-200'}">${u.unitId}</span>
+              <span class="text-[10px] text-slate-400 block">${u.officerName}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-lg ${u.isPanic ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'} font-bold border text-[10px]">${u.status}</span>
+              ${(u.isPanic && (isOwner || currentUser.role === 'Met Control')) ? `<button onclick="clearUnitPanic('${u.unitId}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[10px] px-2 py-0.5 rounded-lg">Clear Panic</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderPublicCalls() {
+      const container = document.getElementById('publicCallsContainer');
+      if (!container) return;
+
+      if (cadState.calls.length === 0) {
+        container.innerHTML = `<div class="col-span-2 p-8 border border-dashed border-sky-500/20 rounded-2xl text-center text-xs text-slate-500">No calls registered in incident log.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      cadState.calls.forEach(call => {
+        container.innerHTML += `
+          <div class="bg-[#0b1120] border border-sky-500/20 rounded-2xl p-4 space-y-3 text-xs">
+            <div class="flex justify-between font-bold text-sky-400">
+              <span>${call.title}</span>
+              <span class="text-[10px] text-slate-400 font-mono">Location: ${call.location}</span>
+            </div>
+            <p class="text-slate-300 text-[11px]">${call.description || 'No description provided.'}</p>
+            
+            <!-- Comment Section -->
+            <div class="pt-2 border-t border-sky-500/10 space-y-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Officer Remarks</span>
+              <div class="space-y-1 max-h-24 overflow-y-auto">
+                ${(call.comments || []).length > 0 
+                  ? call.comments.map(c => `<div class="p-1.5 bg-[#070a12] rounded-lg text-[10px] border border-sky-500/10"><strong class="text-sky-300">${c.author}:</strong> ${c.text}</div>`).join('') 
+                  : '<p class="text-[10px] text-slate-500 italic">No remarks posted.</p>'}
+              </div>
+
+              <div class="flex gap-2 pt-1">
+                <input type="text" id="comment-input-${call.id}" placeholder="Add remark..." class="flex-1 bg-[#070a12] border border-sky-500/20 rounded-lg p-1.5 text-[11px] text-slate-200 focus:outline-none">
+                <button onclick="addCallComment('${call.id}')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[10px] px-2.5 py-1 rounded-lg">Post</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function addCallComment(callId) {
+      const input = document.getElementById(`comment-input-${callId}`);
+      const text = input ? input.value.trim() : '';
+      if (!text) return;
+
+      let call = cadState.calls.find(c => c.id === callId);
+      if (call) {
+        if (!call.comments) call.comments = [];
+        call.comments.push({ author: currentUser.rpName, text });
+        saveCadState();
+        renderPublicCalls();
+        showNotification('Remark Added', 'Comment posted to call log.', 'info');
+      }
+    }
+
+    // PNC Search Engine Functions
+    function searchPNCName() {
+      const query = document.getElementById('pncNameSearch').value.trim().toLowerCase();
+      const res = document.getElementById('pncNameResult');
+      if (!query) return;
+
+      const person = cadState.civilians.find(c => c.name.toLowerCase().includes(query));
+      if (person) {
+        res.innerHTML = `
+          <div class="p-3 bg-[#0b1120] border border-sky-500/20 rounded-xl space-y-1 text-slate-200">
+            <p><strong>Full Name:</strong> ${person.name}</p>
+            <p><strong>DOB:</strong> ${person.dob || 'Unknown'}</p>
+            <p><strong>Driver License:</strong> <span class="${person.driverLicense === 'Valid' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${person.driverLicense}</span></p>
+            <p><strong>Firearm License:</strong> ${person.firearmLicense}</p>
+          </div>
+        `;
+      } else {
+        res.innerHTML = `<div class="p-3 bg-[#0b1120] border border-rose-500/20 rounded-xl text-rose-400 font-bold">No civilian record found in PNC database.</div>`;
+      }
+    }
+
+    function searchPNCPlate() {
+      const query = document.getElementById('pncPlateSearch').value.trim().toUpperCase();
+      const res = document.getElementById('pncPlateResult');
+      if (!query) return;
+
+      const veh = cadState.vehiclesDb.find(v => v.plate.toUpperCase() === query);
+      if (veh) {
+        res.innerHTML = `
+          <div class="p-3 bg-[#0b1120] border border-sky-500/20 rounded-xl space-y-1 text-slate-200">
+            <p><strong>Plate:</strong> <span class="font-mono text-sky-400">${veh.plate}</span></p>
+            <p><strong>Model:</strong> ${veh.model}</p>
+            <p><strong>Color:</strong> ${veh.color}</p>
+            <p><strong>Status:</strong> <span class="${veh.status === 'Valid' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${veh.status}</span></p>
+          </div>
+        `;
+      } else {
+        res.innerHTML = `<div class="p-3 bg-[#0b1120] border border-rose-500/20 rounded-xl text-rose-400 font-bold">No vehicle record found for plate ${query}.</div>`;
+      }
+    }
+
+    // Civilian Operations
     function saveCivilianProfile() {
-      const name = document.getElementById('civNameInput').value;
-      if (!name) return alert('Please enter a civilian full name.');
-      alert(`Civilian record registered for ${name}.`);
+      const name = document.getElementById('civNameInput').value.trim();
+      const dob = document.getElementById('civDobInput').value;
+      const driverLicense = document.getElementById('civDriverLicense').value;
+      const firearmLicense = document.getElementById('civFirearmLicense').value;
+
+      if (!name) return showNotification('Required', 'Please enter full name.', 'warning');
+
+      let civ = cadState.civilians.find(c => c.name.toLowerCase() === name.toLowerCase());
+      if (civ) {
+        civ.dob = dob; civ.driverLicense = driverLicense; civ.firearmLicense = firearmLicense;
+      } else {
+        cadState.civilians.push({ name, dob, driverLicense, firearmLicense });
+      }
+
+      saveCadState();
+      showNotification('Profile Saved', `Civilian record stored in PNC database.`, 'info');
     }
 
     function registerVehicle() {
-      const plate = document.getElementById('vehPlateInput').value;
-      if (!plate) return alert('Please enter a license plate number.');
-      alert(`Vehicle with plate [${plate.toUpperCase()}] registered successfully.`);
+      const plate = document.getElementById('vehPlateInput').value.trim().toUpperCase();
+      const model = document.getElementById('vehModelInput').value.trim();
+      const color = document.getElementById('vehColorInput').value.trim();
+      const status = document.getElementById('vehRegStatus').value;
+
+      if (!plate || !model) return showNotification('Required', 'Specify plate and model.', 'warning');
+
+      let veh = cadState.vehiclesDb.find(v => v.plate === plate);
+      if (veh) {
+        veh.model = model; veh.color = color; veh.status = status;
+      } else {
+        cadState.vehiclesDb.push({ plate, model, color, status });
+      }
+
+      saveCadState();
+      showNotification('DMV Registered', `Vehicle plate [${plate}] added to DMV system.`, 'info');
     }
 
     function submit911Call() {
-      const title = document.getElementById('callTitle').value;
-      const location = document.getElementById('callLocation').value;
-      const description = document.getElementById('callDescription').value;
+      const title = document.getElementById('callTitle').value.trim();
+      const location = document.getElementById('callLocation').value.trim();
+      const description = document.getElementById('callDescription').value.trim();
 
-      if (!title || !location) return alert('Enter title and location');
+      if (!title || !location) return showNotification('Required', 'Provide title and location.', 'warning');
 
-      if (socket) {
-        socket.emit('createCall', { cadId: currentCadId, title, location, description });
-      }
+      const call = {
+        id: 'call_' + Date.now(),
+        title, location, description,
+        assignedUnits: [], comments: []
+      };
+
+      cadState.calls.push(call);
+      saveCadState();
+      renderActiveCalls();
+      renderPublicCalls();
 
       toggleModal('createCallModal', false);
+      showNotification('911 Dispatched', 'Emergency call transmitted to police dispatch.', 'info', 'policeTab');
     }
 
-    // Initialize Lucide icons
+    // DOM Ready Initialization
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
     });
