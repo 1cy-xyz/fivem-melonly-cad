@@ -9,7 +9,7 @@ function registerDispatchSocketHandlers(io, socket) {
     units: Array.from(activeUnits.values())
   });
 
-  // Unit updates their operational status (e.g., 10-8 / On Scene / En Route)
+  // Unit updates operational status (e.g., Available, En Route, Committed)
   socket.on('dispatch:updateUnitStatus', (unitData) => {
     activeUnits.set(socket.id, {
       socketId: socket.id,
@@ -23,7 +23,7 @@ function registerDispatchSocketHandlers(io, socket) {
     io.emit('dispatch:unitsUpdated', Array.from(activeUnits.values()));
   });
 
-  // Control Room / Officer creates a new 999 Incident Call
+  // Create new 999 Incident Call
   socket.on('dispatch:createCall', (callData) => {
     const newCall = {
       id: 'CAD-' + Math.floor(1000 + Math.random() * 9000),
@@ -40,7 +40,7 @@ function registerDispatchSocketHandlers(io, socket) {
     io.emit('dispatch:callCreated', newCall);
   });
 
-  // Assign or detach unit from a 999 CAD Call
+  // Attach unit to a CAD Call
   socket.on('dispatch:assignUnit', ({ callId, callsign }) => {
     const call = activeCalls.find(c => c.id === callId);
     if (call && !call.assignedUnits.includes(callsign)) {
@@ -49,7 +49,7 @@ function registerDispatchSocketHandlers(io, socket) {
     }
   });
 
-  // Close / Clear CAD Call
+  // Clear CAD Call
   socket.on('dispatch:closeCall', (callId) => {
     const index = activeCalls.findIndex(c => c.id === callId);
     if (index !== -1) {
